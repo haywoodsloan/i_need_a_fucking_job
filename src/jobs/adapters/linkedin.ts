@@ -71,11 +71,16 @@ export function parseLinkedinDetail(html: string) {
   };
 }
 
-const BROWSER_HEADERS = {
-  'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36',
+// The guest pages answer a client that says what it is, so this does not pose as a browser.
+const HEADERS = {
+  'User-Agent': 'job-hunt-workbench/0.1 (personal job search tool)',
   Accept: 'text/html',
   'Accept-Language': 'en-US,en;q=0.9',
 };
+
+/** The guest endpoint serves 10 cards per request. */
+const PAGE_SIZE = 10;
+const PAGES = 3;
 
 export const linkedinGuest: Adapter = {
   id: 'linkedin-guest',
@@ -83,20 +88,25 @@ export const linkedinGuest: Adapter = {
   requires: ['ENABLE_LINKEDIN_GUEST'],
   async search(q, ctx) {
     const out: JobPosting[] = [];
-    for (const start of [0, 25]) {
-      const res = await ctx.fetch(linkedinSearchUrl(q, start), { headers: BROWSER_HEADERS, signal: ctx.signal });
-      if (res.status === 429) throw new SourceError('LinkedIn rate-limited this server (429)', 429);
+    const seen = new Set<string>();
+    for (let i = 0; i < PAGES; i++) {
+      const res = await ctx.fetch(linkedinSearchUrl(q, i * PAGE_SIZE), { headers: HEADERS, signal: ctx.signal });
+      if (res.status === 429 || res.status === 999) throw new SourceError(`LinkedIn turned this server away as automated traffic (${res.status})`, res.status);
       if (!res.ok) throw new SourceError(`LinkedIn answered ${res.status}`, res.status);
       const page = parseLinkedinCards(await res.text());
-      out.push(...page);
-      if (page.length < 10) break;
+      for (const job of page) {
+        if (seen.has(job.id)) continue;
+        seen.add(job.id);
+        out.push(job);
+      }
+      if (page.length < PAGE_SIZE) break;
     }
     return out;
   },
 };
 
 export async function linkedinDetail(ctx: Parameters<Adapter['search']>[1], id: string) {
-  const res = await ctx.fetch(`https://www.linkedin.com/jobs-guest/jobs/api/jobPosting/${encodeURIComponent(id)}`, { headers: BROWSER_HEADERS, signal: ctx.signal });
+  const res = await ctx.fetch(`https://www.linkedin.com/jobs-guest/jobs/api/jobPosting/${encodeURIComponent(id)}`, { headers: HEADERS, signal: ctx.signal });
   if (!res.ok) throw new SourceError(`LinkedIn answered ${res.status}`, res.status);
   return parseLinkedinDetail(await res.text());
 }

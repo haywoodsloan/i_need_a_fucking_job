@@ -90,7 +90,11 @@ export const COMPANIES: CompanyDef[] = [
   { id: 'intel', name: 'Intel', industries: ['Semiconductors & Hardware'], platform: 'workday', workday: { host: 'intel.wd1.myworkdayjobs.com', tenant: 'intel', site: 'External' } },
   { id: 'capitalone', name: 'Capital One', industries: ['Fintech & Banking'], platform: 'workday', workday: { host: 'capitalone.wd12.myworkdayjobs.com', tenant: 'capitalone', site: 'Capital_One' } },
   { id: 'northrop', name: 'Northrop Grumman', industries: ['Aerospace & Aviation', 'Defense'], platform: 'workday', workday: { host: 'ngc.wd1.myworkdayjobs.com', tenant: 'ngc', site: 'Northrop_Grumman_External_Site' } },
-  { id: 'unitedhealth', name: 'UnitedHealth Group', aliases: ['Optum'], industries: ['Healthcare'], platform: 'workday', workday: { host: 'uhg.wd1.myworkdayjobs.com', tenant: 'uhg', site: 'External' } },
+  { id: 'visa', name: 'Visa', industries: ['Fintech & Banking'], platform: 'workday', workday: { host: 'visa.wd5.myworkdayjobs.com', tenant: 'visa', site: 'Visa' } },
+
+  // Custom or unsupported hiring systems → employer-filtered Google for Jobs.
+  { id: 'unitedhealth', name: 'UnitedHealth Group', aliases: ['Optum'], industries: ['Healthcare'], platform: 'google-jobs' },
+  { id: 'jobyaviation', name: 'Joby Aviation', industries: ['Aerospace & Aviation'], platform: 'google-jobs' },
 
   // Greenhouse boards.
   { id: 'airbnb', name: 'Airbnb', industries: ['Software & Internet'], platform: 'greenhouse', board: 'airbnb' },
@@ -108,11 +112,9 @@ export const COMPANIES: CompanyDef[] = [
   { id: 'cloudflare', name: 'Cloudflare', industries: ['Software & Internet'], platform: 'greenhouse', board: 'cloudflare' },
   { id: 'spacex', name: 'SpaceX', industries: ['Aerospace & Aviation'], platform: 'greenhouse', board: 'spacex' },
   { id: 'anduril', name: 'Anduril', industries: ['Defense', 'Aerospace & Aviation'], platform: 'greenhouse', board: 'andurilindustries' },
-  { id: 'jobyaviation', name: 'Joby Aviation', industries: ['Aerospace & Aviation'], platform: 'greenhouse', board: 'jobyaviation' },
 
   // Lever sites.
   { id: 'palantir', name: 'Palantir', industries: ['Software & Internet', 'Defense'], platform: 'lever', board: 'palantir' },
-  { id: 'plaid', name: 'Plaid', industries: ['Fintech & Banking'], platform: 'lever', board: 'plaid' },
   { id: 'spotify', name: 'Spotify', industries: ['Media & Entertainment', 'Software & Internet'], platform: 'lever', board: 'spotify' },
 
   // Ashby boards.
@@ -120,9 +122,10 @@ export const COMPANIES: CompanyDef[] = [
   { id: 'ramp', name: 'Ramp', industries: ['Fintech & Banking'], platform: 'ashby', board: 'ramp' },
   { id: 'notion', name: 'Notion', industries: ['Software & Internet'], platform: 'ashby', board: 'notion' },
   { id: 'linear', name: 'Linear', industries: ['Software & Internet'], platform: 'ashby', board: 'linear' },
+  { id: 'plaid', name: 'Plaid', industries: ['Fintech & Banking'], platform: 'ashby', board: 'plaid' },
 
   // SmartRecruiters.
-  { id: 'visa', name: 'Visa', industries: ['Fintech & Banking'], platform: 'smartrecruiters', board: 'Visa' },
+  { id: 'servicenow', name: 'ServiceNow', industries: ['Software & Internet'], platform: 'smartrecruiters', board: 'ServiceNow' },
   { id: 'bosch', name: 'Bosch', industries: ['Semiconductors & Hardware'], platform: 'smartrecruiters', board: 'BoschGroup' },
 
   // Federal agencies via USAJOBS organization codes.

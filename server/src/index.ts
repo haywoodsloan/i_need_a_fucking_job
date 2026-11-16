@@ -8,6 +8,7 @@
  * Secrets live only in this process's environment (see server/.env.example).
  * Nothing about the user's resume is ever sent here.
  */
+import './env';
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import { aggregate, googleJobsAdapter } from '../../src/jobs/aggregate';
 import type { AdapterContext, JobQuery, SearchSettings } from '../../src/jobs/types';

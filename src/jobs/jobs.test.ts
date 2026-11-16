@@ -1,13 +1,27 @@
 import { describe, expect, it } from 'vitest';
 import { aggregate, dedupeKey, mergeJobs } from './aggregate';
-import { normalizeAshby, normalizeGreenhouse, normalizeLever, normalizeWorkday, workdayPostedToIso } from './adapters/ats';
-import { matchesQuery } from './adapters/common';
+import {
+  amazonSearchUrl,
+  normalizeAmazon,
+  normalizeAshby,
+  normalizeGreenhouse,
+  normalizeLever,
+  normalizeWorkday,
+  pickWorkdayLocations,
+  pickWorkdayRemote,
+  smartrecruiters,
+  workday,
+  workdayFacetLeaves,
+  workdayPostedToIso,
+  type WdFacetLeaf,
+} from './adapters/ats';
+import { matchesQuery, parsePlace } from './adapters/common';
 import { normalizeRemoteOk, normalizeUsajobs } from './adapters/feeds';
 import { jsearchUrl, normalizeJSearch, normalizeSerp, parseSalaryText, relativeToIso } from './adapters/googleJobs';
 import { parseIndeedPage, readJsonObject } from './adapters/indeed';
-import { linkedinSearchUrl, parseLinkedinCards, parseLinkedinDetail } from './adapters/linkedin';
+import { linkedinGuest, linkedinSearchUrl, parseLinkedinCards, parseLinkedinDetail } from './adapters/linkedin';
 import { boardsForPublisher } from './boards';
-import { searchCatalog, slugCandidates } from './catalog';
+import { COMPANIES, searchCatalog, slugCandidates } from './catalog';
 import type { FetchLike, JobPosting } from './types';
 
 const NOW = Date.parse('2026-11-16T12:00:00Z');
@@ -104,6 +118,16 @@ describe('ATS adapters', () => {
     expect(j).toMatchObject({ workplace: 'remote', salary: { text: '$200K – $300K' } });
   });
 
+  it('Ashby: a hybrid role flagged isRemote stays hybrid, so it is not shown for every city', () => {
+    // Shape seen live on OpenAI's board: San Francisco roles carry isRemote: true and workplaceType: "Hybrid".
+    const o = { board: 'openai', company: 'OpenAI' };
+    const hybrid = normalizeAshby({ id: 'a', title: 'Software Engineer', location: 'San Francisco', isRemote: true, workplaceType: 'Hybrid', jobUrl: 'u' }, o);
+    expect(hybrid.workplace).toBe('hybrid');
+    expect(matchesQuery(hybrid, { role: 'software engineer', location: 'Austin, TX' })).toBe(false);
+    expect(normalizeAshby({ id: 'b', title: 'Software Engineer', location: 'US - Remote', isRemote: true, workplaceType: 'Remote', jobUrl: 'u' }, o).workplace).toBe('remote');
+    expect(normalizeAshby({ id: 'c', title: 'Software Engineer', location: 'Anywhere', isRemote: true, jobUrl: 'u' }, o).workplace).toBe('remote');
+  });
+
   it('Workday: public URL and relative posted date', () => {
     const b = { host: 'boeing.wd1.myworkdayjobs.com', tenant: 'boeing', site: 'EXTERNAL_CAREERS' };
     const j = normalizeWorkday({ title: 'Engineer', externalPath: '/job/Seattle/Engineer_R1', locationsText: 'Seattle, WA', postedOn: 'Posted 3 Days Ago' }, b, 'Boeing', NOW);
@@ -112,12 +136,142 @@ describe('ATS adapters', () => {
     expect(workdayPostedToIso('Posted 30+ Days Ago', NOW)).toBe(new Date(NOW - 30 * 86400000).toISOString());
   });
 
+  describe('Workday location filters', () => {
+    const leaf = (descriptor: string, param = 'locations'): WdFacetLeaf => ({ param, id: descriptor, descriptor });
+    const austin = parsePlace('Austin, TX')!;
+
+    it('flattens the nested filter tree', () => {
+      const leaves = workdayFacetLeaves([
+        { facetParameter: 'remoteType', values: [{ descriptor: 'Hybrid', id: 'h' }] },
+        {
+          facetParameter: 'locationMainGroup',
+          values: [
+            { facetParameter: 'locationCountry', descriptor: 'Location Country', values: [{ descriptor: 'United States of America', id: 'us' }] },
+            { facetParameter: 'locations', descriptor: 'Locations', values: [{ descriptor: 'US - Austin, TX', id: 'aus' }] },
+          ],
+        },
+      ]);
+      expect(leaves).toEqual([
+        { param: 'remoteType', id: 'h', descriptor: 'Hybrid' },
+        { param: 'locationCountry', id: 'us', descriptor: 'United States of America' },
+        { param: 'locations', id: 'aus', descriptor: 'US - Austin, TX' },
+      ]);
+    });
+
+    it('finds a city however the tenant writes its locations', () => {
+      // One naming style per live tenant: Visa, NVIDIA, Salesforce, Adobe, Intel.
+      for (const name of ['US - Austin, TX', 'US, TX, Austin', 'Texas - Austin', 'Austin', 'US, Texas, Austin']) {
+        expect(pickWorkdayLocations([leaf('US - Bellevue, WA'), leaf(name)], austin)?.names).toEqual([name]);
+      }
+      expect(pickWorkdayLocations([leaf('Texas - Austin'), leaf('Texas - Austin Metro - Remote'), leaf('Texas - Dallas')], austin)?.ids).toEqual(['Texas - Austin', 'Texas - Austin Metro - Remote']);
+      expect(pickWorkdayLocations([leaf('Austintown, OH'), leaf('US - Bellevue, WA')], austin)).toBeUndefined();
+    });
+
+    it('uses the state to tell same-named cities apart', () => {
+      const leaves = [leaf('United States-Texas-Arlington'), leaf('United States-Virginia-Arlington')];
+      expect(pickWorkdayLocations(leaves, parsePlace('Arlington, VA')!)?.names).toEqual(['United States-Virginia-Arlington']);
+      expect(pickWorkdayLocations([leaf('Arlington, TX')], parsePlace('Arlington, VA')!)).toBeUndefined();
+      expect(pickWorkdayLocations([leaf('Washington D.C. - Remote'), leaf('Washington - Seattle Metro - Remote')], parsePlace('Washington, DC')!)?.names).toEqual(['Washington D.C. - Remote']);
+    });
+
+    it('finds remote roles by remote type first, then by remote-named locations', () => {
+      expect(pickWorkdayRemote([leaf('Hybrid', 'remoteType'), leaf('Fully Remote', 'remoteType'), leaf('BR - Remote - Brazil')])).toEqual({ param: 'remoteType', ids: ['Fully Remote'], names: ['Fully Remote'] });
+      expect(pickWorkdayRemote([leaf('Onsite Job', 'remoteType'), leaf('US, TX, Remote'), leaf('Virtual US'), leaf('US, TX, Austin')])?.ids).toEqual(['US, TX, Remote', 'Virtual US']);
+      expect(pickWorkdayRemote([leaf('Onsite Job', 'remoteType'), leaf('USA - Seattle, WA')])).toBeUndefined();
+    });
+
+    it('searches the role, applies the matching location filter, then pages through the results', async () => {
+      const sent: { searchText: string; appliedFacets: Record<string, string[]>; offset: number; limit: number }[] = [];
+      const facets = [{ facetParameter: 'locationMainGroup', values: [{ facetParameter: 'locations', values: [{ descriptor: 'US - Austin, TX', id: 'aus' }, { descriptor: 'US - Bellevue, WA', id: 'bel' }] }] }];
+      const postings = Array.from({ length: 25 }, (_, i) => ({
+        title: i === 3 ? 'Risk Consultant' : `Sr. SW Engineer ${i}`,
+        externalPath: `/job/US---Austin-TX/x_${i}`,
+        locationsText: i === 0 ? '2 Locations' : 'US - Austin, TX',
+        postedOn: 'Posted Today',
+      }));
+      const fetch: FetchLike = async (_url, init) => {
+        const body = JSON.parse(String(init!.body));
+        sent.push(body);
+        // Like the live API: only the first page carries the total and the filters.
+        return Response.json({ total: body.offset ? 0 : body.appliedFacets.locations ? 25 : 300, jobPostings: postings.slice(body.offset, body.offset + body.limit), facets: body.offset ? [] : facets });
+      };
+      const board = { host: 'visa.wd5.myworkdayjobs.com', tenant: 'visa', site: 'Visa' };
+      const jobs = await workday.search({ role: 'software engineer', location: 'austin, tx' }, { fetch, env: {} }, { board, company: 'Visa' });
+      expect(sent.map((b) => [b.searchText, b.appliedFacets, b.offset])).toEqual([
+        ['software engineer', {}, 0],
+        ['software engineer', { locations: ['aus'] }, 0],
+        ['software engineer', { locations: ['aus'] }, 20],
+      ]);
+      expect(sent.every((b) => b.limit === 20)).toBe(true);
+      expect(jobs).toHaveLength(24); // the stray "Risk Consultant" is dropped; "SW Engineer" is kept
+      expect(jobs[0].location).toBe('US - Austin, TX +1 more');
+    });
+
+    it('returns nothing, without a second request, when the tenant has no such location', async () => {
+      let calls = 0;
+      const fetch: FetchLike = async () => {
+        calls++;
+        return Response.json({ total: 9, jobPostings: [{ title: 'Software Engineer', externalPath: '/job/1', locationsText: 'USA - Hazelwood, MO' }], facets: [{ facetParameter: 'locations', values: [{ descriptor: 'USA - Hazelwood, MO', id: 'haz' }] }] });
+      };
+      const board = { host: 'boeing.wd1.myworkdayjobs.com', tenant: 'boeing', site: 'EXTERNAL_CAREERS' };
+      expect(await workday.search({ role: 'software engineer', location: 'Austin, TX' }, { fetch, env: {} }, { board, company: 'Boeing' })).toEqual([]);
+      expect(calls).toBe(1);
+    });
+  });
+
+  it('Amazon: filters by city and state, and lists every place a role is open', () => {
+    const { url, place } = amazonSearchUrl({ role: 'software engineer', location: 'austin, tx', distanceMiles: 25 });
+    const u = new URL(url);
+    expect(u.searchParams.getAll('normalized_city_name[]')).toEqual(['Austin']); // case-sensitive on Amazon's side
+    expect(u.searchParams.getAll('normalized_state_name[]')).toEqual(['Texas']);
+    expect(u.searchParams.has('loc_query')).toBe(false);
+    expect(new URL(amazonSearchUrl({ role: 'sde', location: 'Austin, TX', workplace: ['remote'] }).url).searchParams.has('normalized_city_name[]')).toBe(false);
+    const j = normalizeAmazon(
+      {
+        id_icims: '3112345',
+        title: 'Software Dev Engineer, Amazon Leo',
+        normalized_location: 'Redmond, Washington, USA',
+        locations: ['{"normalizedLocation":"Austin, Texas, USA","type":"ONSITE"}', '{"normalizedLocation":"Redmond, Washington, USA","type":"ONSITE"}', 'not json'],
+        job_path: '/en/jobs/3112345/software-dev-engineer',
+        posted_date: 'November 16, 2026',
+      },
+      place?.city,
+    );
+    expect(j).toMatchObject({ location: 'Austin, Texas, USA · Redmond, Washington, USA', workplace: 'onsite', company: 'Amazon' });
+    expect(j.listings[0].url).toBe('https://www.amazon.jobs/en/jobs/3112345/software-dev-engineer');
+  });
+
+  it('SmartRecruiters: an unknown board id is an error, not an empty result', async () => {
+    // The live API answers 200 with zero postings for a company id that does not exist.
+    const unknown: FetchLike = async () => Response.json({ totalFound: 0, content: [] });
+    await expect(smartrecruiters.search({ role: 'engineer' }, { fetch: unknown, env: {} }, { board: 'Visa', company: 'Visa' })).rejects.toThrow(/no public postings/);
+    const noMatch: FetchLike = async (url) => Response.json(url.includes('q=') ? { totalFound: 0, content: [] } : { totalFound: 817, content: [{}] });
+    await expect(smartrecruiters.search({ role: 'astronaut' }, { fetch: noMatch, env: {} }, { board: 'ServiceNow', company: 'ServiceNow' })).resolves.toEqual([]);
+  });
+
   it('filters whole-board feeds by role words, location and workplace', () => {
     const base = { title: 'Senior Software Engineer', location: 'Austin, TX', workplace: 'onsite' as const };
     expect(matchesQuery(base, { role: 'software engineer' })).toBe(true);
     expect(matchesQuery(base, { role: 'designer' })).toBe(false);
     expect(matchesQuery(base, { role: 'engineer', location: 'Denver, CO' })).toBe(false);
+    expect(matchesQuery(base, { role: 'engineer', location: 'austin tx' })).toBe(true);
     expect(matchesQuery(base, { role: 'engineer', workplace: ['remote'] })).toBe(false);
+  });
+
+  it('filters search-backed sources more loosely, and ignores filler words', () => {
+    expect(matchesQuery({ title: 'Sr. SW Engineer' }, { role: 'software engineer' })).toBe(false);
+    expect(matchesQuery({ title: 'Sr. SW Engineer' }, { role: 'software engineer' }, { title: 'any' })).toBe(true);
+    expect(matchesQuery({ title: 'Risk Consultant' }, { role: 'software engineer' }, { title: 'any' })).toBe(false);
+    expect(matchesQuery({ title: 'Engineering Director' }, { role: 'director of engineering' })).toBe(true);
+  });
+
+  it('reads a typed place into city and state', () => {
+    expect(parsePlace('austin, tx')).toEqual({ city: 'Austin', stateCode: 'TX', stateName: 'Texas' });
+    expect(parsePlace('New York, New York')).toEqual({ city: 'New York', stateCode: 'NY', stateName: 'New York' });
+    expect(parsePlace('san jose CA')).toEqual({ city: 'San Jose', stateCode: 'CA', stateName: 'California' });
+    expect(parsePlace('Washington, D.C.')).toMatchObject({ city: 'Washington', stateCode: 'DC' });
+    expect(parsePlace('London, UK')).toEqual({ city: 'London' });
+    expect(parsePlace('  ')).toBeUndefined();
   });
 });
 
@@ -195,6 +349,31 @@ describe('LinkedIn guest pages', () => {
     expect(u.searchParams.get('f_TPR')).toBe('r86400');
     expect(u.searchParams.get('distance')).toBe('50');
   });
+
+  const card = (id: number) => `<li><div data-entity-urn="urn:li:jobPosting:${id}"><h3 class="base-search-card__title">Engineer ${id}</h3><h4 class="base-search-card__subtitle">Acme</h4></div></li>`;
+
+  it('walks the 10-per-page results without posing as a browser', async () => {
+    const starts: string[] = [];
+    const fetch: FetchLike = async (url, init) => {
+      const start = new URL(url).searchParams.get('start')!;
+      starts.push(start);
+      expect((init!.headers as Record<string, string>)['User-Agent']).not.toMatch(/Mozilla|Chrome/);
+      // The third page is short, and repeats one card from the second.
+      const ids = start === '20' ? [19, 20, 21, 22] : Array.from({ length: 10 }, (_, i) => +start + i);
+      return new Response(ids.map(card).join(''));
+    };
+    const jobs = await linkedinGuest.search({ role: 'engineer' }, { fetch, env: {} });
+    expect(starts).toEqual(['0', '10', '20']);
+    expect(jobs).toHaveLength(23);
+  });
+
+  it('reports being turned away instead of retrying around it', async () => {
+    const limited: FetchLike = async () => new Response('', { status: 429 });
+    await expect(linkedinGuest.search({ role: 'engineer' }, { fetch: limited, env: {} })).rejects.toThrow(/automated traffic \(429\)/);
+    // LinkedIn's own "request denied" code. A Response can't be built with it, so stand one in.
+    const denied: FetchLike = async () => ({ ok: false, status: 999 }) as Response;
+    await expect(linkedinGuest.search({ role: 'engineer' }, { fetch: denied, env: {} })).rejects.toThrow(/automated traffic \(999\)/);
+  });
 });
 
 describe('Indeed page parsing', () => {
@@ -223,6 +402,13 @@ describe('catalog', () => {
   });
   it('generates slug guesses for discovery', () => {
     expect(slugCandidates('Acme Robotics, Inc.')).toEqual(['acmerobotics', 'acme-robotics', 'acme', 'acme_robotics']);
+  });
+  it('gives every entry what its hiring system needs, with unique ids', () => {
+    expect(new Set(COMPANIES.map((c) => c.id)).size).toBe(COMPANIES.length);
+    for (const c of COMPANIES) {
+      if (c.platform === 'workday') expect(c.workday, c.name).toMatchObject({ host: expect.stringMatching(/\.myworkdayjobs\.com$/), tenant: expect.any(String), site: expect.any(String) });
+      else if (['greenhouse', 'lever', 'ashby', 'smartrecruiters', 'usajobs'].includes(c.platform)) expect(c.board, c.name).toBeTruthy();
+    }
   });
 });
 

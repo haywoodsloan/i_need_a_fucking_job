@@ -73,15 +73,64 @@ export function normalizePeriod(p?: string | null): Salary['period'] {
   return undefined;
 }
 
-/** Simple relevance filter for sources that return a whole board (ATS feeds). */
-export function matchesQuery(job: Pick<JobPosting, 'title' | 'location' | 'workplace' | 'postedAt'>, q: JobQuery): boolean {
-  const words = q.role.toLowerCase().split(/\s+/).filter((w) => w.length > 1);
+export const US_STATES: Record<string, string> = {
+  AL: 'Alabama', AK: 'Alaska', AZ: 'Arizona', AR: 'Arkansas', CA: 'California', CO: 'Colorado', CT: 'Connecticut', DE: 'Delaware',
+  DC: 'District of Columbia', FL: 'Florida', GA: 'Georgia', HI: 'Hawaii', ID: 'Idaho', IL: 'Illinois', IN: 'Indiana', IA: 'Iowa',
+  KS: 'Kansas', KY: 'Kentucky', LA: 'Louisiana', ME: 'Maine', MD: 'Maryland', MA: 'Massachusetts', MI: 'Michigan', MN: 'Minnesota',
+  MS: 'Mississippi', MO: 'Missouri', MT: 'Montana', NE: 'Nebraska', NV: 'Nevada', NH: 'New Hampshire', NJ: 'New Jersey', NM: 'New Mexico',
+  NY: 'New York', NC: 'North Carolina', ND: 'North Dakota', OH: 'Ohio', OK: 'Oklahoma', OR: 'Oregon', PA: 'Pennsylvania', RI: 'Rhode Island',
+  SC: 'South Carolina', SD: 'South Dakota', TN: 'Tennessee', TX: 'Texas', UT: 'Utah', VT: 'Vermont', VA: 'Virginia', WA: 'Washington',
+  WV: 'West Virginia', WI: 'Wisconsin', WY: 'Wyoming',
+};
+
+export interface Place {
+  /** Title-cased, because some sources match city names case-sensitively. */
+  city: string;
+  stateCode?: string;
+  stateName?: string;
+}
+
+const titleCase = (s: string) => s.toLowerCase().replace(/(^|[\s-])([a-z])/g, (_, pre: string, c: string) => pre + c.toUpperCase());
+
+/** "austin, tx", "Austin, Texas" and "Austin TX" all become { city: 'Austin', stateCode: 'TX', stateName: 'Texas' }. */
+export function parsePlace(text: string): Place | undefined {
+  const t = text.trim().replace(/\s+/g, ' ');
+  if (!t) return undefined;
+  let city = t;
+  let state = '';
+  const comma = t.indexOf(',');
+  if (comma >= 0) {
+    city = t.slice(0, comma).trim();
+    state = t.slice(comma + 1).split(',')[0].trim();
+  } else {
+    const m = t.match(/^(.+) ([A-Za-z]{2})$/);
+    if (m && US_STATES[m[2].toUpperCase()]) [, city, state] = m;
+  }
+  if (!city) return undefined;
+  const code = state.toUpperCase().replace(/\./g, '');
+  const entry = US_STATES[code] ? [code, US_STATES[code]] : Object.entries(US_STATES).find(([, name]) => name.toLowerCase() === state.toLowerCase());
+  return entry ? { city: titleCase(city), stateCode: entry[0], stateName: entry[1] } : { city: titleCase(city) };
+}
+
+const STOP_WORDS = new Set(['of', 'and', 'the', 'in', 'for', 'to', 'at', 'with', 'or']);
+
+/**
+ * Relevance filter applied to what a source returns.
+ * `title: 'all'` (default) is for whole-board feeds, where nothing has been filtered yet: every role word must be in
+ * the title. `title: 'any'` is for sources that already ran their own search and only need the stray matches removed.
+ */
+export function matchesQuery(
+  job: Pick<JobPosting, 'title' | 'location' | 'workplace' | 'postedAt'>,
+  q: JobQuery,
+  opts: { title?: 'all' | 'any' } = {},
+): boolean {
+  const words = q.role.toLowerCase().split(/\s+/).filter((w) => w.length > 1 && !STOP_WORDS.has(w));
   const title = job.title.toLowerCase();
-  if (words.length && !words.every((w) => title.includes(w))) return false;
+  if (words.length && !(opts.title === 'any' ? words.some((w) => title.includes(w)) : words.every((w) => title.includes(w)))) return false;
   if (q.workplace?.length && job.workplace && !q.workplace.includes(job.workplace)) return false;
   if (q.location && !(q.workplace?.length === 1 && q.workplace[0] === 'remote')) {
     const loc = (job.location ?? '').toLowerCase();
-    const city = q.location.toLowerCase().split(',')[0].trim();
+    const city = parsePlace(q.location)?.city.toLowerCase();
     if (city && loc && !loc.includes(city) && job.workplace !== 'remote' && !REMOTE_RE.test(loc)) return false;
   }
   if (q.postedWithinDays && job.postedAt) {
