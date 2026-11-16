@@ -1,0 +1,32 @@
+Jordan A. Rivera
+Senior Software Engineer
+Austin, TX | jordan.rivera@example.com | (512) 555-0142 | linkedin.com/in/jordanrivera | github.com/jrivera
+
+SUMMARY
+Backend engineer with 8 years building payment and logistics systems. Comfortable owning services end to end, from design docs to on-call.
+
+EXPERIENCE
+Globex Corporation — Austin, TX
+Senior Software Engineer | Jan 2021 – Present
+• Led migration of the order pipeline from a monolith to 14 Go services, cutting p99 latency by 38%.
+• Designed the idempotency layer used by every payment endpoint.
+Software Engineer | Jun 2018 – Dec 2020
+• Built the carrier-rate service handling 2M quotes per day.
+
+Initech LLC, Dallas, TX
+Software Developer Intern  May 2017 - Aug 2017
+- Wrote internal tooling in Python for TPS report validation.
+
+EDUCATION
+University of Texas at Austin — Austin, TX
+B.S. in Computer Science, May 2018
+GPA: 3.7/4.0
+• Dean's List, 2015–2018
+
+SKILLS
+Languages: Go, Python, TypeScript, SQL
+Infrastructure: Kubernetes, Terraform, AWS (Lambda, SQS, DynamoDB), PostgreSQL
+Practices: Code review, Incident response, Technical writing
+
+CERTIFICATIONS
+AWS Certified Solutions Architect – Associate (2022)
