@@ -100,3 +100,6 @@ Any Docker host works: `docker build -f server/Dockerfile -t job-hunt-server .`
 - **Resume builder**: will produce the same `ParsedResume` shape, so builder output and uploaded resumes are interchangeable.
 - **Automated applying**: reads only `toApplicationProfile(resume)`, which returns confirmed fields and refuses to run
   if any field differs from its source.
+
+The plan for the next phase (accounts, stored site logins, application tracking and submitting) is in
+[docs/applications-plan.md](docs/applications-plan.md). None of it is built yet.
