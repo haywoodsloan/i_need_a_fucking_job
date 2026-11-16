@@ -6,7 +6,7 @@
 import { BOARDS, boardsForPublisher } from './boards';
 import { COMPANIES, companyById, isCustomCompany, type CompanyDef } from './catalog';
 import { amazon, ashby, greenhouse, lever, smartrecruiters, workday } from './adapters/ats';
-import type { Adapter } from './adapters/common';
+import { BlockedError, type Adapter } from './adapters/common';
 import { remoteok, remotive, usajobs } from './adapters/feeds';
 import { jsearch, serpapi } from './adapters/googleJobs';
 import { linkedinGuest } from './adapters/linkedin';
@@ -198,7 +198,8 @@ export async function aggregate(q: JobQuery, s: SearchSettings, ctx: AdapterCont
         if (t.employer) jobs = jobs.filter((j) => norm(j.company).includes(norm(t.employer!)));
         return { status: { ...base, ok: true, count: jobs.length, ms: Date.now() - t0 }, jobs };
       } catch (e) {
-        return { status: { ...base, ok: false, count: 0, ms: Date.now() - t0, error: (e as Error).message }, jobs: [] };
+        const blocked = e instanceof BlockedError ? { blocked: true } : {};
+        return { status: { ...base, ok: false, count: 0, ms: Date.now() - t0, error: (e as Error).message, ...blocked }, jobs: [] };
       }
     }),
   );

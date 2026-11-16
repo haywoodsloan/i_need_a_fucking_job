@@ -19,6 +19,19 @@ export class SourceError extends Error {
   }
 }
 
+/**
+ * The site refused this server as automated traffic (a bot check, a CAPTCHA page, LinkedIn's 999). That is the
+ * site's answer: nothing here tries to get around it, and the search reports the source as blocked.
+ */
+export class BlockedError extends SourceError {
+  constructor(
+    public host: string,
+    status?: number,
+  ) {
+    super(`${host} turned this server away as automated traffic${status ? ` (${status})` : ''}`, status);
+  }
+}
+
 export async function getJson<T>(ctx: AdapterContext, url: string, init?: RequestInit): Promise<T> {
   const res = await ctx.fetch(url, { ...init, signal: ctx.signal });
   if (!res.ok) throw new SourceError(`${new URL(url).host} answered ${res.status}`, res.status);

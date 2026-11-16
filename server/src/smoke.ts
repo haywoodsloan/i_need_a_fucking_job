@@ -11,11 +11,13 @@ import { aggregate, planSearch } from '../../src/jobs/aggregate';
 import { BOARDS } from '../../src/jobs/boards';
 import type { SearchSettings, SourceStatus } from '../../src/jobs/types';
 import { makeDiscover } from './discover';
+import { createFetcher } from './fetcher';
 import { closeBrowser, indeedBrowser } from './indeed';
 
 const [role = 'software engineer', location = 'Austin, TX'] = process.argv.slice(2);
 const env = process.env as Record<string, string | undefined>;
-const fetch = globalThis.fetch.bind(globalThis);
+// The same fetch layer the server uses, so pacing, retries and bot-check reporting are part of the test.
+const fetch = createFetcher();
 
 // One company per hiring system, plus a typed name that has to be discovered.
 const settings: SearchSettings = {
@@ -47,7 +49,7 @@ if (location && empty.size) {
   );
 }
 
-const verdict = (s: SourceStatus) => (s.skipped ? 'SKIPPED' : !s.ok ? 'FAIL' : s.count ? 'PASS' : 'EMPTY');
+const verdict = (s: SourceStatus) => (s.skipped ? 'SKIPPED' : s.blocked ? 'BLOCKED' : !s.ok ? 'FAIL' : s.count ? 'PASS' : 'EMPTY');
 console.table(
   res.sources.map((s) => ({
     source: s.label,
@@ -60,7 +62,10 @@ console.table(
 );
 
 const tally = (v: string) => res.sources.filter((s) => verdict(s) === v).length;
-console.log(`\n${tally('PASS')} passed, ${tally('EMPTY')} empty, ${tally('FAIL')} failed, ${tally('SKIPPED')} skipped. ${res.jobs.length} unique jobs. First 10:`);
+const net = fetch.stats();
+console.log(`\n${tally('PASS')} passed, ${tally('EMPTY')} empty, ${tally('FAIL')} failed, ${tally('BLOCKED')} blocked, ${tally('SKIPPED')} skipped.`);
+console.log(`${net.requests} requests sent, ${net.cacheHits} answered from cache, ${net.retries} retried.`);
+console.log(`\n${res.jobs.length} unique jobs. First 10:`);
 for (const j of res.jobs.slice(0, 10)) console.log(`- ${j.title} · ${j.company} · ${j.location ?? ''} · via ${j.listings.map((l) => l.via).join(', ')}`);
 await closeBrowser().catch(() => {});
 if (tally('FAIL')) process.exitCode = 1;

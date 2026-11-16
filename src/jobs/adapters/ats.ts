@@ -46,7 +46,9 @@ export const greenhouse: Adapter<BoardOpts> = {
   browserSafe: true,
   async search(q, ctx, o) {
     const data = await getJson<{ jobs: GhJob[] }>(ctx, `https://boards-api.greenhouse.io/v1/boards/${encodeURIComponent(o.board)}/jobs?content=true`);
-    return data.jobs.map((j) => normalizeGreenhouse(j, o)).filter((j) => matchesQuery(j, q));
+    // Big boards carry thousands of postings (SpaceX: 2,700, 30 MB). Match on the light fields first, and only
+    // convert the descriptions of the postings that are kept.
+    return data.jobs.filter((j) => matchesQuery(normalizeGreenhouse({ ...j, content: undefined }, o), q)).map((j) => normalizeGreenhouse(j, o));
   },
 };
 

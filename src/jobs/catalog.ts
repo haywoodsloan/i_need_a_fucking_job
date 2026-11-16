@@ -8,8 +8,8 @@
  * every company on it, and adding a company is just knowing its board id.
  *
  * Three ways a company gets resolved, in order:
- *   1. A catalog entry below (board ids are best-known values; the server
- *      re-checks them and reports when one stops resolving).
+ *   1. A catalog entry below. Board ids go stale when a company changes
+ *      systems: `npm run check:catalog` in server/ checks each one live.
  *   2. Auto-discovery: the server probes each ATS with slugs made from the
  *      typed name (e.g. "Acme Robotics" → acmerobotics, acme-robotics) and
  *      caches whichever answers. See server/src/discover.ts.

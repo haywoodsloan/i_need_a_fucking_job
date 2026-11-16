@@ -8,7 +8,7 @@
  * preferred for LinkedIn listings.
  */
 import type { JobPosting, JobQuery } from '../types';
-import { decodeHtml, guessWorkplace, htmlToText, iso, SourceError, type Adapter } from './common';
+import { BlockedError, decodeHtml, guessWorkplace, htmlToText, iso, SourceError, type Adapter } from './common';
 import { parseSalaryText } from './googleJobs';
 
 const WT: Record<string, string> = { onsite: '1', remote: '2', hybrid: '3' };
@@ -91,7 +91,7 @@ export const linkedinGuest: Adapter = {
     const seen = new Set<string>();
     for (let i = 0; i < PAGES; i++) {
       const res = await ctx.fetch(linkedinSearchUrl(q, i * PAGE_SIZE), { headers: HEADERS, signal: ctx.signal });
-      if (res.status === 429 || res.status === 999) throw new SourceError(`LinkedIn turned this server away as automated traffic (${res.status})`, res.status);
+      if (res.status === 429 || res.status === 999) throw new BlockedError('LinkedIn', res.status);
       if (!res.ok) throw new SourceError(`LinkedIn answered ${res.status}`, res.status);
       const page = parseLinkedinCards(await res.text());
       for (const job of page) {

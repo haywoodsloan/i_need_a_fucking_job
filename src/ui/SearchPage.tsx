@@ -181,7 +181,7 @@ function SourceStrip({ result }: { result: SearchResponse }) {
           className={`source-pill ${s.ok ? 'ok' : s.error ? 'err' : ''}`}
           title={s.error ?? s.skipped ?? `${s.count} jobs in ${s.ms} ms`}
         >
-          {s.label}: {s.ok ? s.count : s.error ? 'error' : 'off'}
+          {s.label}: {s.ok ? s.count : s.blocked ? 'blocked' : s.error ? 'error' : 'off'}
         </span>
       ))}
     </div>

@@ -26,6 +26,7 @@ you typed yourself.
 │  server/  (Node container: Fly.io / Render / any Docker host)         │
 │   • holds API keys (never shipped to the browser)                     │
 │   • reaches job sources that have no browser access (no CORS)         │
+│   • caches, paces and retries every outbound request                  │
 │   • optional headless Chromium (Playwright)                           │
 └───────────────────────────────────────────────────────────────────────┘
 ```
@@ -50,21 +51,32 @@ See [docs/job-sources.md](docs/job-sources.md) for every source, its cost and it
 
 ## Run it
 
+Everything on one machine, with one command:
+
 ```bash
 npm install
-npm run dev          # frontend on http://localhost:5173
-npm test             # parser + adapter tests
+npm install --prefix server
+cp server/.env.example server/.env   # add keys; the file is gitignored and loaded automatically
+npm run local                        # backend on http://localhost:8787, frontend on http://localhost:5173
+```
+
+The pieces, separately:
+
+```bash
+npm run dev          # frontend only
+npm test             # parser, adapter and fetch-layer tests
 npm run build        # static build in dist/
 
 cd server
-npm install
-cp .env.example .env # add keys
-npx tsx --env-file=.env src/index.ts   # backend on http://localhost:8787
+npm start            # backend only
 npm run smoke -- "software engineer" "Austin, TX"   # live check of every configured source
+npm run check:catalog                               # live check of every catalog company's board id
 ```
 
+Node 22 is recommended. Vite warns on Node older than 20.19 but still runs.
+
 Point the frontend at the backend either at build time (`VITE_API_URL=https://… npm run build`) or at runtime in
-the app: gear icon → Search server.
+the app: gear icon → Search server. `npm run local` does this for you.
 
 ## Deploy
 

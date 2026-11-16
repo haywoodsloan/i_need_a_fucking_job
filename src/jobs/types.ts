@@ -55,6 +55,8 @@ export interface SourceStatus {
   count: number;
   ms: number;
   error?: string;
+  /** The error was the site refusing automated traffic (a bot check), not a fault in the source. */
+  blocked?: boolean;
   /** e.g. "needs JSEARCH_API_KEY on the server". */
   skipped?: string;
 }

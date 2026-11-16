@@ -14,6 +14,7 @@ import { aggregate, googleJobsAdapter } from '../../src/jobs/aggregate';
 import type { AdapterContext, JobQuery, SearchSettings } from '../../src/jobs/types';
 import { jobDetail } from './detail';
 import { makeDiscover } from './discover';
+import { createFetcher } from './fetcher';
 import { closeBrowser, indeedBrowser } from './indeed';
 
 const env = process.env as Record<string, string | undefined>;
@@ -22,7 +23,9 @@ const ORIGINS = (env.ALLOWED_ORIGINS ?? '').split(',').map((s) => s.trim()).filt
 const CACHE_MS = Number(env.CACHE_SECONDS ?? 600) * 1000;
 const RATE = { windowMs: 5 * 60_000, max: Number(env.RATE_LIMIT_PER_5MIN ?? 40) };
 
-const ctx: AdapterContext = { fetch: globalThis.fetch.bind(globalThis), env };
+// Every outbound request is cached, paced per site and retried here. See fetcher.ts.
+const fetcher = createFetcher({ cacheMs: CACHE_MS, cacheMaxBytes: Number(env.FETCH_CACHE_MB ?? 128) * 1048576 });
+const ctx: AdapterContext = { fetch: fetcher, env };
 const discover = makeDiscover(ctx.fetch);
 
 const cache = new Map<string, { at: number; body: string }>();
@@ -90,6 +93,7 @@ const server = createServer(async (req, res) => {
           linkedinGuest: !!env.ENABLE_LINKEDIN_GUEST,
           playwright: !!env.ENABLE_PLAYWRIGHT,
         },
+        fetch: fetcher.stats(),
       });
     }
     if (url.pathname === '/api/search' && req.method === 'POST') {
