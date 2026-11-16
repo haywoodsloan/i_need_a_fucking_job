@@ -59,16 +59,20 @@ Picking an industry adds every catalog company tagged with it.
 
 ## How the server makes requests
 
-Every outbound request goes through `server/src/fetcher.ts`, cheapest tier first:
+Every outbound request goes through one pipeline of tiers, cheapest first. A request only moves to the next tier
+when the one before it could not answer. [fetch-tiers.md](fetch-tiers.md) has the full description.
 
 1. **Cache.** A successful answer is reused for `CACHE_SECONDS` (10 minutes by default), so a second search that
    touches the same company board does not download it again.
 2. **Plain HTTP.** Requests are spaced out per site (a handful at a time, LinkedIn one at a time), retried with
    backoff after a dropped connection or a 502/503/504, and retried after a 429 only when the site says when.
+3. **Browser** (optional, `ENABLE_BROWSER_TIER=1`). A standard headless browser for pages that need JavaScript.
+4. **Your own tiers** (optional, `FETCH_TIERS_MODULE`). A plug-in point for tiers you write.
 
-A site that refuses the request as automated traffic (a bot check, a CAPTCHA page, LinkedIn's status 999) is not
-retried and not worked around. The source is reported as **blocked** in the search results, and the same board's
-listings still arrive through Google for Jobs when a key is set. `/api/health` shows request, cache and blocked counts.
+The built-in tiers never get past a bot check. A site that refuses the request as automated traffic (a bot check, a
+CAPTCHA page, LinkedIn's status 999) is not worked around: if no tier answers, the source is reported as **blocked**
+in the search results, and the same board's listings still arrive through Google for Jobs when a key is set.
+`/api/health` lists the tiers and shows request, cache and blocked counts.
 
 ## Verification status
 

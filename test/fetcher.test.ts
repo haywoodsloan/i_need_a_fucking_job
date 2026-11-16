@@ -1,5 +1,10 @@
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { createFetcher, siteOf, type FetcherOptions } from '../server/src/fetcher';
+import { browserTier, wantsPage } from '../server/src/browser';
+import { createFetcher, isBotCheckPage, siteOf, type FetcherOptions, type FetchTier, type TierFailure } from '../server/src/fetcher';
+import { loadCustomTiers } from '../server/src/tiers';
 import { BlockedError } from '../src/jobs/adapters/common';
 import type { FetchLike } from '../src/jobs/types';
 
@@ -175,5 +180,177 @@ describe('fetch layer: bot checks', () => {
     expect(await res.json()).toEqual({ message: 'You are not subscribed to this API.' });
     const page = setup(async () => html('<h1>Forbidden</h1>', 403));
     expect(await (await page.fetcher(url)).text()).toBe('<h1>Forbidden</h1>');
+  });
+
+  it('recognises a bot check served with a 200 by its title, without misreading real pages', () => {
+    expect(isBotCheckPage(200, '<html><head><title>Just a moment...</title>')).toBe(true);
+    expect(isBotCheckPage(200, '<title>Security Check - Indeed.com</title>')).toBe(true);
+    expect(isBotCheckPage(200, '<title>Access Denied</title>')).toBe(true);
+    expect(isBotCheckPage(200, '<title>Security Checkpoint Officer - TSA</title><p>Solve CAPTCHAs all day</p>')).toBe(false);
+    expect(isBotCheckPage(200, '<li><h3>Engineer</h3></li>')).toBe(false);
+    expect(isBotCheckPage(503, '<p>Service unavailable</p>')).toBe(false);
+  });
+});
+
+describe('fetch layer: pipeline of tiers', () => {
+  const page = 'https://careers.example.com/jobs';
+  const asPage = { headers: { Accept: 'text/html' } };
+  /** A tier that records what it was handed and answers with `body`, passes, or throws. */
+  const tier = (name: string, act: () => Response | undefined) => {
+    const seen: { url: string; failures: TierFailure[] }[] = [];
+    const t: FetchTier = {
+      name,
+      fetch: async ({ url, failures }) => {
+        seen.push({ url, failures: [...failures] });
+        return act();
+      },
+    };
+    return { t, seen };
+  };
+
+  it('only moves on when the cheaper tier could not answer', async () => {
+    const next = tier('next', () => html('<li>job</li>', 200));
+    const fine = setup(async () => html('<li>from http</li>', 200), { tiers: [next.t] });
+    expect(await (await fine.fetcher(page, asPage)).text()).toBe('<li>from http</li>');
+    expect(next.seen).toHaveLength(0);
+    // An error status is still an answer: a 404 from the source is not a reason to try something heavier.
+    const missing = setup(async () => new Response('', { status: 404 }), { tiers: [next.t] });
+    expect((await missing.fetcher(page, asPage)).status).toBe(404);
+    expect(next.seen).toHaveLength(0);
+    expect(fine.fetcher.tiers).toEqual(['cache', 'http', 'next']);
+  });
+
+  it('hands a failed request to the next tier with what went wrong, and caches its answer', async () => {
+    const next = tier('next', () => html('<li>job</li>', 200));
+    const { fetcher, calls } = setup(
+      async () => {
+        throw new TypeError('fetch failed');
+      },
+      { tiers: [next.t], retries: 0 },
+    );
+    expect(await (await fetcher(page, asPage)).text()).toBe('<li>job</li>');
+    expect(await (await fetcher(page, asPage)).text()).toBe('<li>job</li>');
+    expect(calls).toHaveLength(1);
+    expect(next.seen).toHaveLength(1);
+    expect(next.seen[0].failures).toMatchObject([{ tier: 'http', blocked: false }]);
+    expect(next.seen[0].failures[0].error.message).toBe('fetch failed');
+    expect(fetcher.stats()).toMatchObject({ cacheHits: 1, blocked: 0, answeredBy: { next: 1 } });
+  });
+
+  it('tells later tiers when an earlier one was turned away, and lets a tier pass', async () => {
+    const passes = tier('passes', () => undefined);
+    const last = tier('last', () => html('<li>job</li>', 200));
+    const { fetcher } = setup(async () => html('<title>Just a moment...</title>', 403), { tiers: [passes.t, last.t] });
+    expect((await fetcher(page, asPage)).status).toBe(200);
+    expect(passes.seen[0].failures).toMatchObject([{ tier: 'http', blocked: true }]);
+    expect(last.seen[0].failures.map((f) => f.tier)).toEqual(['http']); // passing is not a failure
+  });
+
+  it('reports blocked when no tier answers and one was turned away', async () => {
+    const broken = tier('broken', () => {
+      throw new Error('browser crashed');
+    });
+    const refused = setup(async () => html('<title>Just a moment...</title>', 403), { tiers: [broken.t] });
+    await expect(refused.fetcher(page, asPage)).rejects.toBeInstanceOf(BlockedError);
+    expect(refused.fetcher.stats().blocked).toBe(1);
+    const down = setup(
+      async () => {
+        throw new TypeError('fetch failed');
+      },
+      { tiers: [broken.t], retries: 0 },
+    );
+    await expect(down.fetcher(page, asPage)).rejects.toThrow('browser crashed');
+    expect(down.fetcher.stats().blocked).toBe(0);
+  });
+
+  it('does not try another tier for a search that was cancelled', async () => {
+    const next = tier('next', () => html('<li>job</li>', 200));
+    const ac = new AbortController();
+    const { fetcher } = setup(
+      async () => {
+        ac.abort();
+        throw Object.assign(new Error('cancelled'), { name: 'AbortError' });
+      },
+      { tiers: [next.t] },
+    );
+    await expect(fetcher(page, { ...asPage, signal: ac.signal })).rejects.toThrow('cancelled');
+    expect(next.seen).toHaveLength(0);
+  });
+});
+
+describe('fetch layer: browser tier', () => {
+  const page = 'https://careers.example.com/jobs';
+  const run = (load: Parameters<typeof browserTier>[0], init?: RequestInit) => browserTier(load).fetch({ url: page, init, failures: [] });
+  const asPage = { headers: { Accept: 'text/html,application/xhtml+xml' } };
+
+  it('takes page requests only, and leaves API calls to the other tiers', async () => {
+    expect(wantsPage(asPage)).toBe(true);
+    expect(wantsPage({ headers: new Headers({ accept: 'text/html' }) })).toBe(true);
+    expect(wantsPage(undefined)).toBe(false);
+    expect(wantsPage({ headers: { Accept: 'application/json' } })).toBe(false);
+    expect(wantsPage({ method: 'POST', headers: { Accept: 'text/html' } })).toBe(false);
+    let loads = 0;
+    const load = async () => (loads++, { status: 200, html: '<li>job</li>' });
+    expect(await run(load, { headers: { Accept: 'application/json' } })).toBeUndefined();
+    expect(loads).toBe(0);
+  });
+
+  it('returns the rendered page', async () => {
+    const res = await run(async () => ({ status: 200, html: '<html><title>Careers</title><li>job</li></html>' }), asPage);
+    expect(res!.status).toBe(200);
+    expect(res!.headers.get('content-type')).toMatch(/text\/html/);
+    expect(await res!.text()).toContain('<li>job</li>');
+    expect((await run(async () => ({ status: 0, html: '' }), asPage))!.status).toBe(502);
+  });
+
+  it('stops at a bot check instead of returning it as a page', async () => {
+    await expect(run(async () => ({ status: 403, html: '<title>Just a moment...</title>' }), asPage)).rejects.toBeInstanceOf(BlockedError);
+    await expect(run(async () => ({ status: 200, html: '<title>Security Check - Indeed.com</title>' }), asPage)).rejects.toBeInstanceOf(BlockedError);
+    await expect(run(async () => ({ status: 999, html: '' }), asPage)).rejects.toThrow('careers.example.com turned this server away as automated traffic (999)');
+  });
+
+  it('gets a page request after plain HTTP was turned away, and the source is blocked if it is turned away too', async () => {
+    const served = setup(async () => html('<p>captcha</p>', 403), { tiers: [browserTier(async () => ({ status: 200, html: '<li>job</li>' }))] });
+    expect(await (await served.fetcher(page, asPage)).text()).toBe('<li>job</li>');
+    expect(served.fetcher.stats()).toMatchObject({ blocked: 0, answeredBy: { browser: 1 } });
+    const refused = setup(async () => html('<p>captcha</p>', 403), { tiers: [browserTier(async () => ({ status: 403, html: '<title>Attention Required! | Cloudflare</title>' }))] });
+    await expect(refused.fetcher(page, asPage)).rejects.toBeInstanceOf(BlockedError);
+    expect(refused.fetcher.stats().blocked).toBe(1);
+  });
+});
+
+describe('fetch layer: your own tiers', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'tiers-'));
+  const write = (name: string, source: string) => {
+    writeFileSync(join(dir, name), source);
+    return name;
+  };
+
+  it('is off unless FETCH_TIERS_MODULE is set', async () => {
+    expect(await loadCustomTiers({}, dir)).toEqual([]);
+    expect(await loadCustomTiers({ FETCH_TIERS_MODULE: '  ' }, dir)).toEqual([]);
+  });
+
+  it('loads tiers from a module, as a list or as a function of the environment', async () => {
+    const list = write('list.mjs', `export const tiers = [{ name: 'mine', fetch: async () => new Response('from mine') }];`);
+    const [mine] = await loadCustomTiers({ FETCH_TIERS_MODULE: list }, dir);
+    expect(mine.name).toBe('mine');
+    const { fetcher } = setup(
+      async () => {
+        throw new TypeError('fetch failed');
+      },
+      { tiers: [mine], retries: 0 },
+    );
+    expect(await (await fetcher('https://careers.example.com/jobs')).text()).toBe('from mine');
+
+    const fn = write('fn.mjs', `export default (env) => [{ name: env.NAME, fetch: async () => undefined }];`);
+    expect((await loadCustomTiers({ FETCH_TIERS_MODULE: fn, NAME: 'configured' }, dir)).map((t) => t.name)).toEqual(['configured']);
+  });
+
+  it('refuses a module that is missing, malformed or reuses a built-in name', async () => {
+    await expect(loadCustomTiers({ FETCH_TIERS_MODULE: 'nope.mjs' }, dir)).rejects.toThrow(/FETCH_TIERS_MODULE: could not load/);
+    await expect(loadCustomTiers({ FETCH_TIERS_MODULE: write('bad.mjs', `export const tiers = [{ name: 'x' }];`) }, dir)).rejects.toThrow(/must export `tiers`/);
+    await expect(loadCustomTiers({ FETCH_TIERS_MODULE: write('clash.mjs', `export const tiers = [{ name: 'http', fetch: async () => undefined }];`) }, dir)).rejects.toThrow(/"http" is already used/);
+    rmSync(dir, { recursive: true, force: true });
   });
 });

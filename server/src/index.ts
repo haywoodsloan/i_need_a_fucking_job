@@ -14,8 +14,8 @@ import { aggregate, googleJobsAdapter } from '../../src/jobs/aggregate';
 import type { AdapterContext, JobQuery, SearchSettings } from '../../src/jobs/types';
 import { jobDetail } from './detail';
 import { makeDiscover } from './discover';
-import { createFetcher } from './fetcher';
 import { closeBrowser, indeedBrowser } from './indeed';
+import { buildPipeline } from './tiers';
 
 const env = process.env as Record<string, string | undefined>;
 const PORT = Number(env.PORT ?? 8787);
@@ -23,8 +23,10 @@ const ORIGINS = (env.ALLOWED_ORIGINS ?? '').split(',').map((s) => s.trim()).filt
 const CACHE_MS = Number(env.CACHE_SECONDS ?? 600) * 1000;
 const RATE = { windowMs: 5 * 60_000, max: Number(env.RATE_LIMIT_PER_5MIN ?? 40) };
 
-// Every outbound request is cached, paced per site and retried here. See fetcher.ts.
-const fetcher = createFetcher({ cacheMs: CACHE_MS, cacheMaxBytes: Number(env.FETCH_CACHE_MB ?? 128) * 1048576 });
+// Every outbound request goes through the fetch pipeline: cache, paced and retried HTTP, then any optional tiers.
+// See docs/fetch-tiers.md.
+const pipeline = await buildPipeline(env);
+const fetcher = pipeline.fetch;
 const ctx: AdapterContext = { fetch: fetcher, env };
 const discover = makeDiscover(ctx.fetch);
 
@@ -93,6 +95,7 @@ const server = createServer(async (req, res) => {
           linkedinGuest: !!env.ENABLE_LINKEDIN_GUEST,
           playwright: !!env.ENABLE_PLAYWRIGHT,
         },
+        tiers: fetcher.tiers,
         fetch: fetcher.stats(),
       });
     }
@@ -122,13 +125,14 @@ const server = createServer(async (req, res) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`job search backend on :${PORT}`);
+  console.log(`job search backend on :${PORT} (fetch tiers: ${fetcher.tiers.join(' → ')})`);
   if (!ORIGINS.length) console.warn('ALLOWED_ORIGINS is not set: accepting requests from any origin');
 });
 
 for (const sig of ['SIGINT', 'SIGTERM']) {
   process.on(sig, async () => {
     await closeBrowser().catch(() => {});
+    await pipeline.close();
     process.exit(0);
   });
 }

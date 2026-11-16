@@ -46,8 +46,9 @@ The resume never touches the backend. It is parsed and stored in the browser (lo
 Without a backend the app still loads and the resume tools fully work, but search can only reach the few sources
 that allow direct browser access (Greenhouse, Lever, Ashby, SmartRecruiters company boards and Remotive).
 
-See [docs/job-sources.md](docs/job-sources.md) for every source, its cost and its risks, and
-[docs/resume-model.md](docs/resume-model.md) for the resume data model.
+See [docs/job-sources.md](docs/job-sources.md) for every source, its cost and its risks,
+[docs/fetch-tiers.md](docs/fetch-tiers.md) for how the server fetches (cache, HTTP, optional browser) and how to plug
+in a tier of your own, and [docs/resume-model.md](docs/resume-model.md) for the resume data model.
 
 ## Run it
 

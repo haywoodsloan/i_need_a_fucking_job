@@ -11,13 +11,14 @@ import { aggregate, planSearch } from '../../src/jobs/aggregate';
 import { BOARDS } from '../../src/jobs/boards';
 import type { SearchSettings, SourceStatus } from '../../src/jobs/types';
 import { makeDiscover } from './discover';
-import { createFetcher } from './fetcher';
 import { closeBrowser, indeedBrowser } from './indeed';
+import { buildPipeline } from './tiers';
 
 const [role = 'software engineer', location = 'Austin, TX'] = process.argv.slice(2);
 const env = process.env as Record<string, string | undefined>;
-// The same fetch layer the server uses, so pacing, retries and bot-check reporting are part of the test.
-const fetch = createFetcher();
+// The same fetch pipeline the server uses, so pacing, retries, tiers and bot-check reporting are part of the test.
+const pipeline = await buildPipeline(env);
+const fetch = pipeline.fetch;
 
 // One company per hiring system, plus a typed name that has to be discovered.
 const settings: SearchSettings = {
@@ -64,8 +65,10 @@ console.table(
 const tally = (v: string) => res.sources.filter((s) => verdict(s) === v).length;
 const net = fetch.stats();
 console.log(`\n${tally('PASS')} passed, ${tally('EMPTY')} empty, ${tally('FAIL')} failed, ${tally('BLOCKED')} blocked, ${tally('SKIPPED')} skipped.`);
-console.log(`${net.requests} requests sent, ${net.cacheHits} answered from cache, ${net.retries} retried.`);
+const answered = Object.entries(net.answeredBy).map(([tier, n]) => `${tier} ${n}`);
+console.log(`Fetch tiers: ${fetch.tiers.join(' → ')}. Answered by: ${[`cache ${net.cacheHits}`, ...answered].join(', ')}. ${net.requests} requests sent, ${net.retries} retried.`);
 console.log(`\n${res.jobs.length} unique jobs. First 10:`);
 for (const j of res.jobs.slice(0, 10)) console.log(`- ${j.title} · ${j.company} · ${j.location ?? ''} · via ${j.listings.map((l) => l.via).join(', ')}`);
 await closeBrowser().catch(() => {});
+await pipeline.close();
 if (tally('FAIL')) process.exitCode = 1;
