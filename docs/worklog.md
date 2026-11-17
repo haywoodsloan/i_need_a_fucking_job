@@ -69,11 +69,15 @@ we avoid bugs and regression. Consider the best practices for testing when build
 - **Search server:** a search with a body that is not JSON was answered 500 and is now 400. A body that is too
   large is now 413. The table behind the search limit grew without bound and is now capped at 5000 addresses.
   The company lookup kept one memory for the whole process and now keeps one per server.
+- **CI:** the first run passed on Windows and failed on Linux before the browser tests could start. GitHub's
+  "latest" Ubuntu had moved to a release that the pinned Playwright has no browser for. The Linux job is now
+  pinned to Ubuntu 24.04, the system the server's Docker image is built on.
 
 **Left open:** the gaps found and not fixed are listed in [status.md](status.md#known-gaps). The recordings of
 job sources are hand-typed until someone records real ones on the laptop.
 
-**Commits:** 4f5e535 (the server), db8cba3 (the tests), and the one that added this entry (the docs).
+**Commits:** 4f5e535 (the server), db8cba3 (the tests), 927662e (the docs), and one after it that pins the Linux
+job in CI.
 
 ## 2026-11-17: Accounts and sign-in (step 0 of the plan)
 

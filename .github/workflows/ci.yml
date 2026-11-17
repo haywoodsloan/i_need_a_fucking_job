@@ -22,7 +22,10 @@ jobs:
       # what the other one says.
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        # Linux is pinned to Ubuntu 24.04, the system the server's Docker image is built on. The browser tests
+        # use the Playwright version pinned in package.json, and that version has no browser for a newer Ubuntu.
+        # Move the two together: a newer Playwright first, then a newer Ubuntu here.
+        os: [ubuntu-24.04, windows-latest]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

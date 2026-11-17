@@ -266,6 +266,11 @@ The run builds its own copy of the app into a temporary folder (`test/e2e/build.
 minimum on Linux), the browser tests, and a build. The demo is deployed from `main` only when all of it passed on
 both systems. The coverage report of each run is kept for 14 days as a download on the run's page.
 
+The Linux job is pinned to Ubuntu 24.04, the system the server's Docker image is built on. The pinned Playwright
+has no browser for a newer Ubuntu, and "the latest" Ubuntu moves without notice. When Playwright is upgraded, the
+version in both `package.json` files, the image in `server/Dockerfile` and the system in the workflow move
+together.
+
 ## What is not tested
 
 A green run does not cover these. Each one is a known gap, not an oversight:

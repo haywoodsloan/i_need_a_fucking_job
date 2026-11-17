@@ -98,6 +98,11 @@ asking, with a test first. Take one out of this list in the commit that fixes it
 
 **Tooling**
 
+- Playwright is held at one exact version in both `package.json` files, to match the image in
+  `server/Dockerfile`, and the Linux job in CI is pinned to Ubuntu 24.04 for it
+  ([testing.md](testing.md#ci)). Upgrading Playwright means moving all four together.
+- CI warns that the GitHub actions it uses (`checkout`, `setup-node` and `upload-artifact` at v4) are built for
+  an older Node. They still run. They need moving to their next major versions at some point.
 - `npm audit` reports 6 findings rated high in the root project. All six are one weakness in `picomatch`, which
   Vite and Vitest use to match file names: a pattern can be written so that matching takes very long. Those tools
   are only handed the patterns in this repository's own config, and none of it is in the built app or in the
