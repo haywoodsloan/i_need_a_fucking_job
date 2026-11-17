@@ -80,14 +80,16 @@ describe('serving the built app', () => {
     expect(APP_CSP).not.toMatch(/unsafe-inline|unsafe-eval|\*/);
   });
 
-  it('tells the page that accounts are on only when they are', async () => {
-    expect((await raw('/')).body).toContain('<meta name="job-hunt-accounts" content="on" />\n  </head>');
+  it('tells the page to search through this server, and that accounts are on only when they are', async () => {
+    const on = (await raw('/')).body;
+    expect(on).toContain('<title>App</title>\n    <meta name="job-hunt-server" content="on" />\n    <meta name="job-hunt-accounts" content="on" />\n  </head>');
     const off = loadApp(dir);
     const answered = await new Promise<string>((resolve) => {
       const res = { writeHead: () => res, end: (body?: Buffer) => resolve(String(body)) };
       off.handle({ method: 'GET', headers: {} } as never, res as never, '/');
     });
-    expect(answered).toBe(INDEX);
+    expect(answered).toBe(INDEX.replace('  </head>', '    <meta name="job-hunt-server" content="on" />\n  </head>'));
+    expect(answered).not.toContain('job-hunt-accounts');
   });
 
   it('lets the browser keep hashed files and recheck the page', async () => {

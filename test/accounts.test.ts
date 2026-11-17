@@ -609,6 +609,14 @@ describe('deleting the account', () => {
     expect((await w.browser().post('/api/auth/sign-in', { email, password: PASSWORD })).status).toBe(401);
     expect(await db.query('select 1 from users where email = $1', [email])).toEqual([]);
     expect(await db.query('select 1 from sessions s join users u on u.id = s.user_id where u.email = $1', [email])).toEqual([]);
+    // No table still holds the address, including the log of what happened to the account.
+    for (const table of ['users', 'sessions', 'invites', 'audit_log']) {
+      const rows = await db.query<Record<string, unknown>>(`select * from ${table}`);
+      expect(JSON.stringify(rows).includes(email), `${table} still holds the address`).toBe(false);
+    }
+    // The log still says that it happened.
+    const [deleted] = await db.query<{ event: string; detail: unknown }>("select event, detail from audit_log where event = 'account_deleted' order by id desc limit 1");
+    expect(deleted).toEqual({ event: 'account_deleted', detail: {} });
     // The address is free again.
     expect((await w.browser().post('/api/auth/accept-invite', { code: await w.invite(email), password: PASSWORD })).status).toBe(200);
   });

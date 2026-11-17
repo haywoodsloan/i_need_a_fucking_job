@@ -16,5 +16,9 @@ export default defineConfig({
   test: {
     environment: 'node',
     include: ['src/**/*.test.{ts,tsx}', 'test/**/*.test.{ts,tsx}'],
+    // Starting the embedded database takes a second or two. The defaults (5 and 10 seconds) are too close to that
+    // on a slow machine.
+    testTimeout: 30_000,
+    hookTimeout: 30_000,
   },
 });

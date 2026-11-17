@@ -2,7 +2,13 @@ import { aggregate } from './aggregate';
 import { DEFAULT_BOARDS } from './boards';
 import type { JobPosting, JobQuery, SearchResponse, SearchSettings } from './types';
 
-export const DEFAULT_API_URL: string = import.meta.env.VITE_API_URL ?? '';
+/**
+ * The search server the app uses until the user sets another one (gear icon → Search server). A build can name one
+ * with VITE_API_URL. A server that serves the app itself says so in the page (server/src/static.ts), and then the
+ * search server is the page's own address.
+ */
+const servedByServer = typeof document !== 'undefined' && document.querySelector('meta[name="job-hunt-server"]') !== null;
+export const DEFAULT_API_URL: string = import.meta.env.VITE_API_URL || (servedByServer ? window.location.origin : '');
 
 export const DEFAULT_SETTINGS: SearchSettings & { apiUrl: string } = {
   boards: DEFAULT_BOARDS,

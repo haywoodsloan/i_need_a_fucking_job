@@ -118,8 +118,11 @@ export function loadApp(dir: string, o: AppOptions = {}) {
   };
   const add = (path: string, raw: Buffer) => {
     let body = raw;
-    if (path === '/index.html' && o.accounts) {
-      body = Buffer.from(raw.toString('utf8').replace('</head>', '  <meta name="job-hunt-accounts" content="on" />\n  </head>'));
+    if (path === '/index.html') {
+      // Tells the page what the server it came from offers: search (src/jobs/client.ts), and accounts when they
+      // are on (src/account/client.ts). A copy of the app on a static host has neither line.
+      const tags = ['<meta name="job-hunt-server" content="on" />', ...(o.accounts ? ['<meta name="job-hunt-accounts" content="on" />'] : [])];
+      body = Buffer.from(raw.toString('utf8').replace('</head>', `  ${tags.join('\n    ')}\n  </head>`));
     }
     files.set(path, {
       body,

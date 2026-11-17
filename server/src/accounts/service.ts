@@ -579,6 +579,8 @@ export function createAccountService(o: AccountServiceOptions) {
       // in this database or in any backup of it.
       await t.run('delete from users where id = $1', [user.id]);
       await t.run('delete from invites where email = $1', [user.email]);
+      // The log keeps what happened to which account id, but no longer the address it belonged to.
+      await t.run("update audit_log set detail = detail - 'email' where detail ->> 'email' = $1", [user.email]);
       await audit('account_deleted', user.id, {}, t);
     });
   }
