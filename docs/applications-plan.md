@@ -1,7 +1,9 @@
 # Accounts, site logins and application tracking: design plan
 
-**Status:** proposal. Nothing in this document is built yet. Written 2026-11-16. Decision 1 was made the same day.
-Decisions 2 to 7 are still open ([2](#2-decisions-for-sloan)).
+**Status:** Step 0 of the build order ([15](#15-build-order)), accounts and sign-in, is built and described in
+[accounts.md](accounts.md). Where it differs from this plan is listed in [4.6](#46-as-built-in-step-0). Nothing else
+in this document is built yet. Written 2026-11-16. Decision 1 was made the same day. Decisions 2 to 7 are still open
+([2](#2-decisions-for-sloan)). Step 0 follows the recommended answer to decision 4.
 
 This is the plan for the phase after job search and the resume analyzer: user accounts, safe storage of each user's
 logins for job boards and hiring systems, tracking applications, submitting them from inside the app, where Claude
@@ -49,7 +51,7 @@ those defaults.
 
 ## 3. Starting point
 
-What exists today, from the code:
+What existed when this plan was written, from the code:
 
 - A static React app on GitHub Pages. The resume is parsed and stored only in the browser (`src/lib/storage.ts`).
 - `server/` is a stateless search proxy: no users, no database, no cookies. All outbound requests go through the
@@ -91,7 +93,7 @@ So sign-in is written in `server/` from standard, well-reviewed parts, with noth
 | Pepper | A 32-byte server secret mixed into Argon2id, kept in the host's secret store and never in the database. A stolen database alone then cannot be used to guess passwords. |
 | Encryption | AES-256-GCM and HKDF-SHA256 from Node's built-in `crypto`. No custom ciphers. |
 | Password rules | At least 14 characters, because this one password also guards the vault. Checked against known-breached passwords at sign-up. No forced symbols, paste and password managers allowed. |
-| Web framework | Fastify in place of the raw `node:http` server, for cookies, input validation, rate limits and WebSockets. |
+| Web framework | Node's built-in HTTP server, as before. Fastify was the first choice here. In Step 0 the account routes turned out small enough to write as plain functions from a request to a reply, which keeps them testable without a running server and adds no dependency. A framework is looked at again when the live view needs WebSockets ([6.3](#63-the-live-view)). |
 
 ### 4.3 Sessions
 
@@ -119,6 +121,30 @@ So sign-in is written in `server/` from standard, well-reviewed parts, with noth
 
 Passkeys (which can also unlock the vault on devices that support the PRF extension), a second factor for our own
 sign-in, and deriving the key in the browser so the password never reaches the server at all.
+
+### 4.6 As built in Step 0
+
+Step 0 built 4.1 to 4.4 and the keys of [5.2](#52-keys). [accounts.md](accounts.md) is the reference for what
+exists. What differs from the text above:
+
+- **No web framework.** See the last row of the table in 4.2.
+- **The cookie on a laptop.** `__Host-session` needs HTTPS. On `http://localhost` the cookie is named `session` and
+  has no `Secure` flag. Everything else about it is the same.
+- **The vault key exists, the vault does not.** Every account has its vault key, locked by the password, by the
+  recovery code, and by the session while unlocked. Locking, unlocking and the 60-minute clock work on the server
+  and are tested. There is no "Lock now" button yet, because nothing is stored under the key until Step 2.
+- **Recovery codes and reset links are built,** ahead of Step 4, where the build order first listed them.
+- **Typing the password again** is asked for changing the password, a new recovery code, deleting the account and
+  unlocking the vault. Revealing a login, exporting and connecting a site arrive with the vault.
+- **The per-user data key** for class D data ([12](#12-data-model)) is not there yet. It arrives with the first
+  class D table, in Step 1. Row-level security waits for the same step: the Step 0 tables are reached only through
+  one service that always filters by account.
+- **The local database is PGlite,** as hoped in [11.2](#112-options). Only one process can open it, so admin
+  commands go through the running server.
+- **The admin commands** are `setup`, `invite`, `reset`, `users` and `sign-out`.
+- **Two ways to get one origin.** For development, Vite passes the account routes on to the backend. The server
+  can also serve the built app itself, with the strict Content Security Policy (`npm run local:built`). A hosted
+  copy will have that second shape.
 
 ## 5. The login vault
 
@@ -579,9 +605,9 @@ planted-instruction attacks concentrate, so this plan keeps models out of signed
 
 Database: Postgres, so the server stays stateless and can move between these hosts. A serverless Postgres with a free
 tier that sleeps when idle suits the usage pattern (Neon is the usual choice, limits to confirm). Azure Database for
-PostgreSQL is the credit-paid alternative at very roughly $15 to $20 a month, always on. Locally, Postgres can run
-embedded in the Node process (PGlite) so `npm run local` keeps working with nothing new to install. That is to be
-confirmed in the first step, and the fallback is Postgres in Docker.
+PostgreSQL is the credit-paid alternative at very roughly $15 to $20 a month, always on. Locally, Postgres runs
+embedded in the Node process (PGlite), so `npm run local` keeps working with nothing new to install. Step 0
+confirmed that on Linux. Windows is still to be checked on the laptop, and the fallback is Postgres in Docker.
 
 Recommendation: laptop through Phase 3, an Azure staging copy when hosting work starts, and choose the
 friends-facing host then. Fly.io is the pick if staying inside the Azure credit's terms matters.
@@ -639,7 +665,7 @@ standing of users' accounts on other sites, and the server's own keys.
 | 2 | The running server is taken over (a bug, a bad dependency, stolen deploy access) | Vaults of users who do not sign in during the takeover stay closed. Short unlock window. Few dependencies, locked versions. The browser worker has no database or key access. The audit log shows every use of a login. | Passwords, vault keys and logins of users active during the takeover are exposed. Treat as a full breach: rotate the pepper, force resets, tell users to change site passwords. |
 | 3 | The operator or the host's staff look at the data | Same as 1 for the vault. No admin screen can show a login. | Whoever deploys code is trusted, and class D data is readable by the operator. |
 | 4 | A session cookie is stolen | `HttpOnly`, `Secure`, `SameSite`. The cookie decrypts nothing by itself: it works only through our server, where revealing or exporting a login still needs the password. Vault locks on its own clock. Sign out everywhere. | Until the session ends, whoever holds the cookie can use the app as that user. Until the vault locks, that includes checks and applications on connected sites. |
-| 5 | Script injection through job description HTML | The current sanitizer rebuilds descriptions from a short tag list and copies no attributes except web links, which is sound. Before accounts ship it gets attack-payload tests and a strict Content Security Policy behind it, with a sandboxed frame as a further option. | Residual risk in any app that shows third-party HTML. |
+| 5 | Script injection through job description HTML | The sanitizer rebuilds descriptions from a short tag list and copies no attributes except web links. Step 0 added tests with 92 attack payloads, run in a real browser as well, and a strict Content Security Policy for the app when our server serves it. The tests found one flaw, now fixed: the text of scripts inside SVG and MathML was shown as plain text instead of being dropped. A sandboxed frame is a further option. | Residual risk in any app that shows third-party HTML. |
 | 6 | Forged requests or the app framed by another site | `SameSite=Strict`, origin checks, framing disallowed. | Low. |
 | 7 | Password guessing on our sign-in | Rate limits, slow hashing, breached-password check, invite-only. | Reused passwords. A second factor is the later answer. |
 | 8 | The service used to test stolen logins or spam employers | Invite-only, users sign in to sites themselves in the live view, per-user limits, user-pressed Submit. | Low at this size. |
@@ -661,15 +687,17 @@ account, or that the operator cannot see tracker data.
 
 ## 14. Changes to the repo
 
-- `server/` grows from a search proxy into the app server: `auth/`, `db/`, `vault/`, `connectors/`, `live/`, `ai/`,
-  `admin/`. `server/src/index.ts` moves to Fastify. Search keeps working unchanged for signed-out users.
+- `server/` grows from a search proxy into the app server: `accounts/` and `db/` (built in Step 0), then `vault/`,
+  `connectors/`, `live/` and `ai/`. `server/src/index.ts` stays on Node's built-in HTTP server for now
+  ([4.2](#42-why-sign-in-is-built-here-and-not-bought)). Search keeps working unchanged for signed-out users.
 - `src/apply/` holds the shared types (form questions, fill plans, saved answers), used by both the browser and the
   server, the way `src/jobs` is today.
 - New pages: Sign in, Applications, Application detail, Apply review, Connected sites, Account.
 - `src/resume/model.ts` keeps its contract. AI-located fields are still `origin: 'source'`, since the text is an
   exact slice.
 - Local development moves to one origin: Vite proxies `/api` to the backend, replacing the cross-origin
-  `VITE_API_URL` setup for anything signed-in. `npm run local` keeps working.
+  `VITE_API_URL` setup for anything signed-in. `npm run local` keeps working. (Built in Step 0 for the account
+  routes. Search still calls the backend directly.)
 - README and docs: reword the two promises named in [3](#3-starting-point) when the parts that change them ship.
 - Tests: known-answer and tamper tests for every crypto path, sign-in and session tests, connector tests against
   recorded pages, and live smoke tests run from the laptop like `npm run smoke`.
@@ -680,13 +708,16 @@ Each step ends with something usable.
 
 | Step | What | Done when |
 | --- | --- | --- |
-| 0 | Foundations: one-origin dev setup, database, accounts, sessions, invites, security headers, sanitizer tests | Sloan can sign in and out locally, and the auth tests pass |
+| 0 | **Built.** Foundations: one-origin dev setup, database, accounts, sessions, invites, security headers, sanitizer tests | Sloan can sign in and out locally, and the auth tests pass |
 | 1 | Tracker without logins: records, one-click add, paste a link, file import, stages and timeline, Open on site, "posting closed" check | Sloan tracks real applications in the app |
 | 2 | Vault and assisted apply for sites that need no login: Greenhouse first, then Lever and Ashby. Key handling, lock and unlock, live view as a local window, form reading, matching, review, fill, user Submit, snapshots, saved answers | A real Greenhouse application is sent end to end from the laptop |
 | 3 | Workday: connect or create an account with the user present, stored passwords, status sync on open | A real Workday application's status shows in the tracker |
 | 4 | Hosted for friends: domain, deployment, streamed live view, invites, recovery codes, backups, the notice | A friend signs up from an invite and connects a site |
 | A | In parallel after step 0: Claude resume breakdown and review, board discovery, the usage meter | A two-column resume that the rules parser scrambles comes out right, and the meter shows what it cost |
 | Later | Revisiting decision 1 (LinkedIn and Indeed logins), email signals, passkeys, more hiring systems | |
+
+Step 0 also built two things listed under later steps: key handling with lock and unlock on the server (Step 2),
+and recovery codes (Step 4). See [4.6](#46-as-built-in-step-0).
 
 Live sites can only be reached from the laptop, not from the cloud build environment, so every connector is finished
 and smoke-tested there.
@@ -701,7 +732,8 @@ and smoke-tested there.
 - Whether Lever and Ashby truly offer applicants no status page.
 - Real token counts for resume breakdown, to replace the estimates in [9.4](#94-what-it-costs).
 - Whether the Azure credit can pay for a per-token Phi deployment.
-- Whether PGlite is good enough for local development.
+- Whether PGlite and the Argon2 package behave on Windows as they do on Linux, where Step 0 was built and tested.
+- The real breached-password lookup, which the build environment could not reach.
 - Current limits and prices for Azure Container Apps, the Postgres free tier and Fly.io.
 
 ## 17. Sources

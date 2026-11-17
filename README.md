@@ -12,6 +12,7 @@ you typed yourself.
 | --- | --- | --- |
 | Job search aggregator | `src/jobs`, `src/ui/SearchPage.tsx`, `server/` | One search bar, one de-duplicated result list, postings readable in-app |
 | Resume upload + analyzer | `src/resume`, `src/ui/ResumePage.tsx` | PDF / DOCX / TXT parsed in the browser, side-by-side verification |
+| Accounts and sign-in | `src/account`, `src/ui/AccountPage.tsx`, `server/src/accounts` | Invite-only and off until you turn it on. The base for tracking applications. See [docs/accounts.md](docs/accounts.md) |
 
 ## Architecture
 
@@ -28,8 +29,12 @@ you typed yourself.
 │   • reaches job sources that have no browser access (no CORS)         │
 │   • caches, paces and retries every outbound request                  │
 │   • optional headless Chromium (Playwright)                           │
+│   • optional accounts and sign-in, with their own database            │
 └───────────────────────────────────────────────────────────────────────┘
 ```
+
+The server can also serve the app itself (`npm run local:built`), so the two share one address. Sign-in needs
+that, and a hosted copy with accounts will run that way. The GitHub Pages copy stays a demo without accounts.
 
 **What needs the backend, and why**
 
@@ -40,6 +45,7 @@ you typed yourself.
 | Workday, Amazon Jobs, Remote OK | endpoints don't allow browser (CORS) requests | `server/` |
 | LinkedIn public pages, company auto-discovery | no CORS, needs server-side requests | `server/` |
 | Indeed headless browser | needs a real Chromium process | `server/` (Docker) |
+| Accounts and sign-in | a static host cannot check a password or keep a session | `server/` |
 
 The resume never touches the backend. It is parsed and stored in the browser (localStorage + IndexedDB).
 
@@ -48,7 +54,8 @@ that allow direct browser access (Greenhouse, Lever, Ashby, SmartRecruiters comp
 
 See [docs/job-sources.md](docs/job-sources.md) for every source, its cost and its risks,
 [docs/fetch-tiers.md](docs/fetch-tiers.md) for how the server fetches (cache, HTTP, optional browser) and how to plug
-in a tier of your own, and [docs/resume-model.md](docs/resume-model.md) for the resume data model.
+in a tier of your own, [docs/resume-model.md](docs/resume-model.md) for the resume data model, and
+[docs/accounts.md](docs/accounts.md) for accounts and sign-in.
 
 ## Run it
 
@@ -61,12 +68,23 @@ cp server/.env.example server/.env   # add keys; the file is gitignored and load
 npm run local                        # backend on http://localhost:8787, frontend on http://localhost:5173
 ```
 
+Accounts are optional and off by default. To turn them on, run this once and open the link it prints:
+
+```bash
+npm run admin -- setup you@example.com   # then start (or restart) npm run local
+```
+
+It creates the server's secret in `server/.env` and a local database in `server/.data/`. Both are gitignored.
+[docs/accounts.md](docs/accounts.md) has the rest: inviting people, forgotten passwords, what is stored, backups.
+
 The pieces, separately:
 
 ```bash
 npm run dev          # frontend only
-npm test             # parser, adapter and fetch-layer tests
+npm test             # parser, adapter, fetch-layer, account and sanitizer tests
 npm run build        # static build in dist/
+npm run local:built  # build, then let the backend serve the app at http://localhost:8787 with strict security headers
+npm run admin        # account commands: setup, invite, reset, users, sign-out
 
 cd server
 npm start            # backend only
@@ -96,6 +114,10 @@ fly deploy --config server/fly.toml
 
 Any Docker host works: `docker build -f server/Dockerfile -t job-hunt-server .`
 
+This deploys search only. Leave accounts off on a hosted server for now: its database lives in a folder inside the
+container, which a redeploy throws away. Hosting with accounts is a later step of the plan
+([docs/applications-plan.md](docs/applications-plan.md), section 11).
+
 ## Roadmap hooks already in the data model
 
 - **Resume builder**: will produce the same `ParsedResume` shape, so builder output and uploaded resumes are interchangeable.
@@ -103,4 +125,5 @@ Any Docker host works: `docker build -f server/Dockerfile -t job-hunt-server .`
   if any field differs from its source.
 
 The plan for the next phase (accounts, stored site logins, application tracking and submitting) is in
-[docs/applications-plan.md](docs/applications-plan.md). None of it is built yet.
+[docs/applications-plan.md](docs/applications-plan.md). Its first step, accounts and sign-in, is built
+([docs/accounts.md](docs/accounts.md)). The rest is not built yet.
