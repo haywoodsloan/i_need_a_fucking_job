@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "local": "node scripts/local.mjs",
+    "local:built": "npm run build && npm --prefix server run start:app",
     "admin": "npm --prefix server run admin --",
     "build": "tsc -b && vite build",
     "preview": "vite preview",

@@ -6,6 +6,8 @@
 const ALLOWED = new Set(['P', 'BR', 'UL', 'OL', 'LI', 'STRONG', 'B', 'EM', 'I', 'U', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'A', 'DIV', 'SPAN', 'TABLE', 'TBODY', 'TR', 'TD', 'TH', 'BLOCKQUOTE']);
 const DROP = new Set(['SCRIPT', 'STYLE', 'IFRAME', 'OBJECT', 'EMBED', 'FORM', 'INPUT', 'BUTTON', 'TEXTAREA', 'SELECT', 'NOSCRIPT', 'TEMPLATE', 'SVG', 'MATH']);
 
+const HTML_NAMESPACE = 'http://www.w3.org/1999/xhtml';
+
 const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 export function termsRegex(terms: string[]): RegExp | undefined {
@@ -23,13 +25,16 @@ export function sanitizeHtml(html: string, highlight?: RegExp): string {
         appendText(dst, child.textContent ?? '', highlight);
       } else if (child.nodeType === Node.ELEMENT_NODE) {
         const el = child as Element;
-        if (DROP.has(el.tagName)) continue;
-        if (!ALLOWED.has(el.tagName)) {
+        // SVG and MathML elements give their names in lower case, so compare in upper case: an <svg> and everything
+        // in it is dropped, like the other tags in DROP.
+        const tag = el.tagName.toUpperCase();
+        if (DROP.has(tag)) continue;
+        if (el.namespaceURI !== HTML_NAMESPACE || !ALLOWED.has(tag)) {
           walk(el, dst);
           continue;
         }
-        const copy = document.createElement(el.tagName.toLowerCase());
-        if (el.tagName === 'A') {
+        const copy = document.createElement(tag.toLowerCase());
+        if (tag === 'A') {
           const href = el.getAttribute('href') ?? '';
           if (/^https?:\/\//i.test(href)) {
             copy.setAttribute('href', href);

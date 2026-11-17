@@ -5,17 +5,20 @@
  *   POST /api/search           { query: JobQuery, settings: SearchSettings } → SearchResponse
  *   GET  /api/job?id=<job id>  full description for snippet-only results
  *   /api/auth, /api/account    sign-in and accounts, when this server is set up for them (see docs/accounts.md)
+ *   everything else            the built app itself, when started with --serve-app (see static.ts)
  *
  * Secrets live only in this process's environment (see server/.env.example).
  * Nothing about the user's resume is ever sent here.
  */
 import './env';
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
+import { fileURLToPath } from 'node:url';
 import { aggregate, googleJobsAdapter } from '../../src/jobs/aggregate';
 import type { AdapterContext, JobQuery, SearchSettings } from '../../src/jobs/types';
 import { jobDetail } from './detail';
 import { makeDiscover } from './discover';
 import { closeBrowser, indeedBrowser } from './indeed';
+import { loadApp, requestUrl } from './static';
 import { buildPipeline } from './tiers';
 
 const env = process.env as Record<string, string | undefined>;
@@ -47,6 +50,18 @@ async function startAccounts() {
     if ((e as NodeJS.ErrnoException).code === 'ERR_MODULE_NOT_FOUND') console.error('Accounts need packages that are not installed yet. Run "npm install" in server/ and start again.');
     else if (name === 'DatabaseInUse') console.error(`${(e as Error).message} Stop it first. If nothing of this app is running, delete the file server/.data/pg.lock and start again.`);
     else console.error(name === 'ConfigError' ? (e as Error).message : e);
+    process.exit(1);
+  }
+}
+
+// The built app, when this server is asked to serve it as well. `npm run local` leaves this off: Vite serves the app.
+const app = env.SERVE_APP === '1' || process.argv.includes('--serve-app') ? serveApp() : undefined;
+
+function serveApp() {
+  try {
+    return loadApp(fileURLToPath(new URL('../../dist', import.meta.url)), { accounts: !!accounts, https: accounts?.config.secureCookies });
+  } catch (e) {
+    console.error((e as Error).name === 'NoBuiltApp' ? (e as Error).message : e);
     process.exit(1);
   }
 }
@@ -102,7 +117,7 @@ function validSettings(s: unknown): s is SearchSettings {
 const server = createServer(async (req, res) => {
   let url: URL;
   try {
-    url = new URL(req.url ?? '/', 'http://x');
+    url = requestUrl(req.url);
   } catch {
     return send(res, 400, { error: 'Bad request' });
   }
@@ -114,6 +129,7 @@ const server = createServer(async (req, res) => {
     });
   }
   if (url.pathname === '/api/auth/session') return send(res, 200, { available: false, user: null });
+  if (app && !url.pathname.startsWith('/api/') && app.handle(req, res, url.pathname)) return;
   cors(req, res);
   if (req.method === 'OPTIONS') return res.writeHead(204).end();
   try {
@@ -159,6 +175,7 @@ const server = createServer(async (req, res) => {
 server.listen(PORT, () => {
   console.log(`job search backend on :${PORT} (fetch tiers: ${fetcher.tiers.join(' → ')})`);
   console.log(accounts ? `accounts: on, for the app at ${accounts.config.origins.join(' or ')}` : 'accounts: off (turn them on with: npm run admin -- setup <your email>)');
+  if (app) console.log(`app: the built app (${app.paths.length} files from dist/) is served at http://localhost:${PORT}`);
   if (!ORIGINS.length) console.warn('ALLOWED_ORIGINS is not set: accepting requests from any origin');
 });
 

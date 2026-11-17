@@ -79,12 +79,20 @@ h1, h2, h3 { line-height: 1.2; margin: 0; }
   display: flex; align-items: center; justify-content: space-between;
   padding: 12px 20px; gap: 12px;
 }
-.topnav .brand { font-weight: 700; text-decoration: none; color: var(--text); }
+.topnav .brand { font-weight: 700; text-decoration: none; color: var(--text); white-space: nowrap; }
 .topnav nav { display: flex; gap: 4px; }
 .topnav nav a {
-  padding: 6px 12px; border-radius: 999px; text-decoration: none; color: var(--muted);
+  padding: 6px 12px; border-radius: 999px; text-decoration: none; color: var(--muted); white-space: nowrap;
 }
 .topnav nav a[aria-current='page'] { background: var(--surface); color: var(--text); box-shadow: var(--shadow); }
+@media (max-width: 420px) {
+  .topnav { padding: 12px; gap: 8px; }
+  .topnav nav { gap: 0; }
+  .topnav nav a { padding: 6px 8px; }
+}
+@media (max-width: 340px) {
+  .topnav nav a { padding: 6px; font-size: 14px; }
+}
 
 .btn {
   border: 1px solid var(--border); background: var(--surface); border-radius: 8px;
@@ -209,6 +217,45 @@ h1, h2, h3 { line-height: 1.2; margin: 0; }
 .notice.bad { background: var(--bad-soft); color: var(--bad); }
 .field-row { display: flex; gap: 8px; }
 .field-row input { flex: 1; border: 1px solid var(--border); border-radius: 8px; padding: 7px 10px; background: var(--surface-2); }
+
+/* ---------------------------------------------------------------- account */
+.account-page { width: min(520px, calc(100% - 32px)); margin: 4vh auto 0; padding-bottom: 48px; display: flex; flex-direction: column; gap: 16px; }
+.account-page.wide { width: min(720px, calc(100% - 32px)); }
+.account-page h1 { font-size: 26px; letter-spacing: -0.01em; }
+.account-page p { margin: 0; }
+.account-page code { font: 13px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background: var(--surface-2); border-radius: 4px; padding: 1px 4px; }
+.account-page .btn { white-space: nowrap; flex: none; }
+.account-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.account-head > div { min-width: 0; }
+.account-head p { margin-top: 4px; overflow-wrap: anywhere; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; display: flex; flex-direction: column; gap: 12px; }
+.card h2 { font-size: 16px; }
+.form { display: flex; flex-direction: column; gap: 14px; }
+.form-field { display: flex; flex-direction: column; gap: 4px; }
+.form-field > label { font-size: 13px; color: var(--muted); }
+.form input:is([type='email'], [type='password'], [type='text']):not(.sr-only) {
+  width: 100%; min-width: 0; border: 1px solid var(--border); border-radius: 8px; padding: 9px 10px; background: var(--surface-2); font-size: 16px;
+}
+.form input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.form input[readonly] { color: var(--muted); }
+.form input.code-input { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: 0.04em; text-transform: uppercase; }
+.form input.code-input::placeholder { letter-spacing: 0; }
+.password-row { display: flex; gap: 6px; }
+.password-row .btn { flex: none; min-width: 64px; justify-content: center; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
+.check { display: flex; gap: 8px; align-items: center; cursor: pointer; }
+.code-box {
+  font: 600 19px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: 0.05em; text-align: center;
+  padding: 16px 12px; border-radius: 10px; background: var(--surface-2); border: 1px dashed var(--border);
+  user-select: all; overflow-wrap: anywhere;
+}
+.session-list { list-style: none; margin: 0; padding: 0; }
+.session-list li { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 0; border-top: 1px solid var(--border); }
+.session-list li > div { min-width: 0; }
+.badge.ok { background: var(--ok-soft); color: var(--ok); }
+.btn.danger { color: var(--bad); border-color: var(--bad); }
+.btn.danger:hover { background: var(--bad-soft); }
+.notice a { color: inherit; }
 
 /* ----------------------------------------------------------------- resume */
 .dropzone {

@@ -189,7 +189,13 @@ export async function startAccounts(config: AccountsConfig, o: OpenAccountsOptio
 
   async function handle(req: IncomingMessage, res: ServerResponse, url: URL): Promise<void> {
     const send = (status: number, body: unknown, headers: Record<string, string | string[]> = {}) => {
-      res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', ...headers });
+      res.writeHead(status, {
+        'Content-Type': 'application/json; charset=utf-8',
+        'Cache-Control': 'no-store',
+        'X-Content-Type-Options': 'nosniff',
+        ...(config.secureCookies ? { 'Strict-Transport-Security': 'max-age=31536000' } : {}),
+        ...headers,
+      });
       res.end(JSON.stringify(body));
     };
     let body: unknown;

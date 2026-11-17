@@ -6,6 +6,7 @@
   "description": "Search backend: runs job-source adapters that need secrets, CORS-less endpoints, or a headless browser.",
   "scripts": {
     "start": "tsx src/index.ts",
+    "start:app": "tsx src/index.ts --serve-app",
     "dev": "tsx watch src/index.ts",
     "smoke": "tsx src/smoke.ts",
     "check:catalog": "tsx src/check-catalog.ts",
