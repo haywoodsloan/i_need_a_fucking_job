@@ -7,7 +7,6 @@ import { slugCandidates, type CompanyDef, type WorkdayBoard } from '../../src/jo
 import type { FetchLike } from '../../src/jobs/types';
 
 type Found = Pick<CompanyDef, 'platform' | 'board'>;
-const cache = new Map<string, { at: number; v: Found | undefined }>();
 const DAY = 86_400_000;
 
 type Probed = 'greenhouse' | 'lever' | 'ashby' | 'smartrecruiters';
@@ -47,11 +46,13 @@ export async function probeWorkday(fetch: FetchLike, b: WorkdayBoard): Promise<n
   return total;
 }
 
-export function makeDiscover(fetch: FetchLike) {
+/** Each lookup function remembers what it found for a day, including "nothing", so a name is not probed twice. */
+export function makeDiscover(fetch: FetchLike, now: () => number = Date.now) {
+  const cache = new Map<string, { at: number; v: Found | undefined }>();
   return async (name: string): Promise<Found | undefined> => {
     const key = name.toLowerCase().trim();
     const hit = cache.get(key);
-    if (hit && Date.now() - hit.at < DAY) return hit.v;
+    if (hit && now() - hit.at < DAY) return hit.v;
     let found: Found | undefined;
     outer: for (const slug of slugCandidates(name)) {
       const attempts = await Promise.allSettled(
@@ -69,7 +70,7 @@ export function makeDiscover(fetch: FetchLike) {
         }
       }
     }
-    cache.set(key, { at: Date.now(), v: found });
+    cache.set(key, { at: now(), v: found });
     return found;
   };
 }
