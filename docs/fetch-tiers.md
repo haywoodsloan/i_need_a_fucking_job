@@ -112,8 +112,8 @@ answer. They see every kind of request, API calls included, so pass (`return und
 Names must be unique, and `cache`, `http` and `browser` are taken. A module that cannot be loaded stops the server at
 startup with a message naming the file, so a typo never silently runs without your tier.
 
-To try a tier without the network, hand it to the pipeline with a fake first tier, the way `test/fetcher.test.ts`
-does:
+To try a tier without the network, hand it to the pipeline with a fake first tier, the way
+`test/server/fetcher.test.ts` does:
 
 ```ts
 const fetcher = createFetcher({

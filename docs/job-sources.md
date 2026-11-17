@@ -17,6 +17,10 @@ duplicates (same company + title + city) into one posting that lists every board
 Routes 4 and 5 are off unless the server enables them **and** the user turns on "Direct site access" in settings.
 Neither ever logs in or uses anyone's account.
 
+Route 5 is older code (`server/src/indeed.ts`) that hides that it is automated. That goes against the rule this
+project has since settled on ([decisions/0007](decisions/0007-no-bot-check-bypass.md)), so it is not extended, and
+whether to delete it is an open question for Sloan ([status.md](status.md#waiting-on-sloan)).
+
 Glassdoor and ZipRecruiter are reachable only through route 1 today.
 
 ## The "one adapter, thousands of employers" idea (experimental section)
@@ -76,8 +80,14 @@ in the search results, and the same board's listings still arrive through Google
 
 ## Verification status
 
-Adapters are tested against sample payloads (`src/jobs/jobs.test.ts`), and since 2026-11-16 those samples follow what
-the live services return. Run from a home connection on that date, searching "software engineer" near Austin, TX:
+No automated test calls a live site. Each source is tested two ways: against small samples for the fields it
+reads (`src/jobs/jobs.test.ts` and the tests next to the adapters), and from request to posting against a recorded
+answer (`test/sources/contract.test.ts`). The recorded answers are typed by hand until someone records real ones
+on the laptop. [testing.md](testing.md#recorded-answers-from-job-sources) has both, and the steps for
+[adding a source](testing.md#adding-a-job-source).
+
+So the live services are checked by hand. Since 2026-11-16 the samples follow what they return. Run from a home
+connection on that date, searching "software engineer" near Austin, TX:
 
 | Source | Result |
 | --- | --- |

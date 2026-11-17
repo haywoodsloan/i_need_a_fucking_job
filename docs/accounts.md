@@ -108,7 +108,7 @@ The tables:
 
 What is never stored, in the database or in the server's log: passwords, recovery codes, the codes inside links,
 session tokens, vault keys in the clear, and network addresses. A test dumps every table and looks for each of
-those secrets (`test/accounts.test.ts`, "what the database holds").
+those secrets (`test/server/accounts.test.ts`, "what the database holds").
 
 Deleting an account removes its row, its sessions and its links, and takes the email out of the log. The log
 keeps the fact that an account was deleted.
@@ -318,8 +318,8 @@ is the only driver today. A hosted copy will get a driver for a normal Postgres 
 - **For your own machine only, for now.** Do not turn accounts on in a container whose disk is thrown away on
   redeploy (the Fly.io setup in the README is one): the database would go with it. Hosting with accounts is a
   later step of the plan and brings a real Postgres server.
-- **Not yet checked on Windows.** The tests and a full browser run pass on Linux. The two new packages ship
-  prebuilt for Windows, but nobody has run them there yet.
+- **Not yet used on Windows by a person.** The tests, the browser tests included, pass on Windows and on Linux in
+  CI. Nobody has signed in on a real Windows machine yet.
 - **The breached-password lookup has only been tested against a stand-in.** The machine this was built on could
   not reach the real service. To check it, try to create an account with `password1234567`: it should be refused.
 - **Someone who knows your email can lock you out for 15 minutes** by guessing wrong ten times. That is the price
@@ -352,7 +352,18 @@ is the only driver today. A hosted copy will get a driver for a normal Postgres 
 | `src/account/` | The app's side: calls to the routes, and who is signed in. |
 | `src/ui/SignInPages.tsx`, `AccountPage.tsx`, `AccountForms.tsx` | The pages. |
 
-`npm test` runs all of it: the account flows against a real in-memory database (`test/accounts.test.ts`), known
-answers and tampering for the cryptography (`test/accounts-crypto.test.ts`), the built-app server
-(`test/static.test.ts`), the app's account client (`src/account/client.test.ts`), and 92 hostile job descriptions
-against the sanitizer (`src/ui/sanitize.test.ts`).
+`npm test` runs all of it:
+
+| Test | What it checks |
+| --- | --- |
+| `test/server/accounts.test.ts` | Every account route, against a real database in memory |
+| `test/server/accounts-crypto.test.ts` | The cryptography: known answers, and tampering with every stored value |
+| `test/server/limits.test.ts` | The limits on guessing |
+| `test/server/static.test.ts` | The built-app server and its security headers |
+| `test/integration/admin-cli.test.ts`, `test/integration/server-start.test.ts` | `npm run admin` and the server, started as real processes |
+| `src/account/client.test.ts` | The app's calls to the account routes |
+| `src/ui/SignInPages.test.tsx`, `src/ui/AccountPage.test.tsx`, `src/App.test.tsx` | The pages, with a stand-in for the server |
+| `src/ui/sanitize.test.ts`, `src/ui/sanitize.property.test.ts` | Hostile job descriptions against the sanitizer |
+
+`npm run test:e2e` also takes an invite to a signed-in account in a real browser, under the real security
+headers. [testing.md](testing.md) says how the tests are organized.

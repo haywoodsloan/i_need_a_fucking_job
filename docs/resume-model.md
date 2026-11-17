@@ -38,6 +38,17 @@ ParsedResume
                                awards, …) keep their lines as items[] so nothing is dropped
 ```
 
+## From a file to text
+
+The parser works on plain text. `src/resume/load.ts` opens the file, and `src/resume/extract.ts` turns what it
+gets into lines:
+
+| File | How it becomes lines |
+| --- | --- |
+| PDF | pdf.js gives runs of text with their place on the page. Runs on one baseline become one line. A wide gap inside a line becomes three spaces, which the parser reads as a column break ("Name      email"). Each run keeps its box, so the review screen can highlight it on the page. |
+| Word (`.docx`) | mammoth turns the file into HTML. A paragraph or a heading becomes a line. A list item becomes a line that starts with "• ", so the parser can tell a bullet from a header. The marker is never part of a field. A table row whose cells hold one line each becomes one line, with three spaces between the cells. A table that lays out the page (a cell with several paragraphs, a list or another table) is read cell after cell, one line per paragraph. |
+| Text (`.txt`, `.md`) | Used as it is. |
+
 ## How parsing works
 
 No AI and no network. `parseResume` is deterministic rules:
@@ -56,6 +67,16 @@ Left: the original (rendered PDF page with highlights, or the extracted text). R
 side highlights the other. Text not captured by any field gets a wavy underline. To fix a wrong field without
 retyping, select the right text in the Text view and choose "Use" for the active field, which keeps it verbatim.
 Typing a correction is allowed and is marked `typed`.
+
+## Tests
+
+| Test | What it checks |
+| --- | --- |
+| `src/resume/model.test.ts` | The guarantee: a field that differs from its source is caught, and only confirmed fields get out |
+| `src/resume/parse.test.ts`, `src/resume/dates.test.ts`, `src/resume/extract.test.ts` | The rules, on sample resumes and small pieces of text |
+| `src/resume/parse.property.test.ts` | Made-up text and PDFs by the hundred: the parser never fails, and every field is the file's exact words |
+| `test/integration/pdf.test.ts`, `test/integration/docx.test.ts` | A real PDF and a real Word file through the real readers |
+| `src/ui/ResumePage.test.tsx`, `test/e2e/app.e2e.ts` | The review screen, in a simulated and in a real browser |
 
 ## Known limits
 

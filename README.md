@@ -6,6 +6,10 @@ A web app for finding jobs, tracking applications, prepping for interviews, and 
 resume data is either an exact slice of the file you uploaded (with a pointer to where it came from) or something
 you typed yourself.
 
+**Working on the code, as a person or as an AI agent?** Start with [AGENTS.md](AGENTS.md): the rules, a map of
+the code, the commands, and what "done" means. [docs/status.md](docs/status.md) says where things stand, and
+[docs/README.md](docs/README.md) lists everything that is written down.
+
 ## What's here
 
 | Feature | Where | Notes |
@@ -35,6 +39,8 @@ you typed yourself.
 
 The server can also serve the app itself (`npm run local:built`), so the two share one address. Sign-in needs
 that, and a hosted copy with accounts will run that way. The GitHub Pages copy stays a demo without accounts.
+[docs/architecture.md](docs/architecture.md) has the full picture: every folder, and what happens during a search,
+a resume upload and a sign-in.
 
 **What needs the backend, and why**
 
@@ -54,8 +60,9 @@ that allow direct browser access (Greenhouse, Lever, Ashby, SmartRecruiters comp
 
 See [docs/job-sources.md](docs/job-sources.md) for every source, its cost and its risks,
 [docs/fetch-tiers.md](docs/fetch-tiers.md) for how the server fetches (cache, HTTP, optional browser) and how to plug
-in a tier of your own, [docs/resume-model.md](docs/resume-model.md) for the resume data model, and
-[docs/accounts.md](docs/accounts.md) for accounts and sign-in.
+in a tier of your own, [docs/resume-model.md](docs/resume-model.md) for the resume data model,
+[docs/accounts.md](docs/accounts.md) for accounts and sign-in, [docs/testing.md](docs/testing.md) for the tests, and
+[docs/decisions/](docs/decisions/README.md) for why things are the way they are.
 
 ## Run it
 
@@ -81,7 +88,9 @@ The pieces, separately:
 
 ```bash
 npm run dev          # frontend only
-npm test             # parser, adapter, fetch-layer, account and sanitizer tests
+npm run check        # before every push: type check, all tests with coverage, build
+npm test             # unit, component and integration tests, about 20 seconds
+npm run test:e2e     # the built app in a real browser (docs/testing.md says how to give it one)
 npm run build        # static build in dist/
 npm run local:built  # build, then let the backend serve the app at http://localhost:8787 with strict security headers
 npm run admin        # account commands: setup, invite, reset, users, sign-out
@@ -92,14 +101,15 @@ npm run smoke -- "software engineer" "Austin, TX"   # live check of every config
 npm run check:catalog                               # live check of every catalog company's board id
 ```
 
-Node 22 is recommended. Vite warns on Node older than 20.19 but still runs.
+Node 22.12 or newer is needed. Vite and the test runner do not support anything older.
 
 Point the frontend at the backend either at build time (`VITE_API_URL=https://… npm run build`) or at runtime in
 the app: gear icon → Search server. `npm run local` does this for you.
 
 ## Deploy
 
-**Frontend (GitHub Pages).** `.github/workflows/ci.yml` tests, builds and deploys `dist/` on every push to `main`.
+**Frontend (GitHub Pages).** `.github/workflows/ci.yml` checks every push on Linux and on Windows, and deploys
+`dist/` from `main` when both pass.
 One-time setup: repo Settings → Pages → Source: **GitHub Actions**, and (once the backend is up) Settings →
 Variables → `VITE_API_URL`.
 

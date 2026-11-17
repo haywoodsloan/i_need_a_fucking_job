@@ -32,7 +32,7 @@ export default mergeConfig(
           test: {
             name: 'unit',
             environment: 'node',
-            include: ['src/**/*.test.ts', 'test/server/**/*.test.ts', 'test/sources/**/*.test.ts'],
+            include: ['src/**/*.test.ts', 'test/server/**/*.test.ts', 'test/sources/**/*.test.ts', 'test/docs/**/*.test.ts'],
           },
         },
         {
