@@ -1,0 +1,126 @@
+{
+  "source": "serpapi",
+  "origin": "handwritten",
+  "date": "2026-11-17",
+  "note": "Handwritten from the fields the adapter reads and the shape the service documents. The company \"Northwind Robotics\" and every posting are made up. It exercises the code, but it cannot notice the live service changing: replace it with a recording (npm run fixtures:record) from a machine that can reach the service.",
+  "search": {
+    "query": {
+      "role": "software engineer",
+      "location": "Austin, TX",
+      "distanceMiles": 25
+    },
+    "env": {
+      "SERPAPI_KEY": "REDACTED"
+    }
+  },
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "url": "https://serpapi.com/search.json?engine=google_jobs&q=software+engineer&hl=en&gl=us&api_key=REDACTED&location=Austin%2C+TX&lrad=40"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "json": {
+          "search_metadata": {
+            "id": "sample",
+            "status": "Success"
+          },
+          "search_parameters": {
+            "q": "software engineer",
+            "engine": "google_jobs",
+            "location_requested": "Austin, TX",
+            "google_domain": "google.com",
+            "hl": "en",
+            "gl": "us"
+          },
+          "jobs_results": [
+            {
+              "title": "Software Engineer, Perception",
+              "company_name": "Northwind Robotics",
+              "location": " Austin, TX ",
+              "via": "LinkedIn",
+              "share_link": "https://www.google.com/search?ibp=htl;jobs&q=software+engineer&htidocid=sAmPlE_serp_0001AAAAAA%3D%3D",
+              "thumbnail": "https://serpapi.com/searches/sample/images/0001.jpeg",
+              "extensions": [
+                "3 days ago",
+                "135K–170K a year",
+                "Full-time",
+                "Health insurance"
+              ],
+              "detected_extensions": {
+                "posted_at": "3 days ago",
+                "salary": "135K–170K a year",
+                "schedule_type": "Full-time",
+                "health_insurance": true
+              },
+              "description": "Northwind Robotics builds warehouse robots that work next to people. You will own the perception stack.",
+              "apply_options": [
+                {
+                  "title": "LinkedIn",
+                  "link": "https://www.linkedin.com/jobs/view/software-engineer-perception-at-northwind-robotics-4100000001"
+                },
+                {
+                  "title": "Indeed",
+                  "link": "https://www.indeed.com/viewjob?jk=0123456789abcdef"
+                }
+              ],
+              "job_id": "eyJqb2JfdGl0bGUiOiJTb2Z0d2FyZSBFbmdpbmVlciwgUGVyY2VwdGlvbiIsInNhbXBsZSI6dHJ1ZX0="
+            }
+          ],
+          "serpapi_pagination": {
+            "next_page_token": "sAmPlE_next_page_token"
+          }
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "url": "https://serpapi.com/search.json?engine=google_jobs&q=software+engineer&hl=en&gl=us&api_key=REDACTED&location=Austin%2C+TX&lrad=40&next_page_token=sAmPlE_next_page_token"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "json": {
+          "search_metadata": {
+            "id": "sample-2",
+            "status": "Success"
+          },
+          "jobs_results": [
+            {
+              "title": "Senior Software Engineer (Remote)",
+              "company_name": "Contoso Logistics",
+              "location": "Anywhere",
+              "via": "ZipRecruiter",
+              "share_link": "https://www.google.com/search?ibp=htl;jobs&q=software+engineer&htidocid=sAmPlE_serp_0002AAAAAA%3D%3D",
+              "extensions": [
+                "Just posted",
+                "Work from home",
+                "Contractor"
+              ],
+              "detected_extensions": {
+                "posted_at": "Just posted",
+                "work_from_home": true,
+                "schedule_type": "Contractor"
+              },
+              "description": "Six month contract building APIs for a shipping platform.",
+              "apply_options": [
+                {
+                  "title": "ZipRecruiter",
+                  "link": "https://www.ziprecruiter.com/c/Contoso-Logistics/Job/Senior-Software-Engineer/-in-Remote?jid=sample0002"
+                }
+              ],
+              "job_id": "eyJqb2JfdGl0bGUiOiJTZW5pb3IgU29mdHdhcmUgRW5naW5lZXIgKFJlbW90ZSkiLCJzYW1wbGUiOnRydWV9"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

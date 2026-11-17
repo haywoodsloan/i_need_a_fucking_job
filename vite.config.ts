@@ -1,4 +1,3 @@
-/// <reference types="vitest/config" />
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
@@ -9,16 +8,9 @@ const backend = process.env.VITE_API_URL;
 
 // Relative base so the static build works from any GitHub Pages sub-path
 // (https://<user>.github.io/<repo>/) without hard-coding the repo name.
+// The tests have their own file, vitest.config.ts, which builds on this one.
 export default defineConfig({
   base: './',
   plugins: [react()],
   server: backend ? { proxy: { '^/api/(auth|account|vault)(/|$)': { target: backend } } } : undefined,
-  test: {
-    environment: 'node',
-    include: ['src/**/*.test.{ts,tsx}', 'test/**/*.test.{ts,tsx}'],
-    // Starting the embedded database takes a second or two. The defaults (5 and 10 seconds) are too close to that
-    // on a slow machine.
-    testTimeout: 30_000,
-    hookTimeout: 30_000,
-  },
 });

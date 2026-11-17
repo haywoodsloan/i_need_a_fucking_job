@@ -1,0 +1,255 @@
+{
+  "source": "workday",
+  "origin": "handwritten",
+  "date": "2026-11-17",
+  "note": "Handwritten from the fields the adapter reads and the shape the service documents. The company \"Northwind Robotics\" and every posting are made up. It exercises the code, but it cannot notice the live service changing: replace it with a recording (npm run fixtures:record) from a machine that can reach the service.",
+  "search": {
+    "query": {
+      "role": "software engineer",
+      "location": "Austin, TX",
+      "distanceMiles": 25
+    },
+    "options": {
+      "board": {
+        "host": "northwind.wd5.myworkdayjobs.com",
+        "tenant": "northwind",
+        "site": "Careers"
+      },
+      "company": "Northwind Robotics"
+    }
+  },
+  "exchanges": [
+    {
+      "request": {
+        "method": "POST",
+        "url": "https://northwind.wd5.myworkdayjobs.com/wday/cxs/northwind/Careers/jobs",
+        "body": "{\"appliedFacets\":{},\"limit\":20,\"offset\":0,\"searchText\":\"software engineer\"}"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "json": {
+          "total": 4,
+          "jobPostings": [
+            {
+              "title": "Software Engineer III",
+              "externalPath": "/job/US---Austin-TX/Software-Engineer-III_R-10432",
+              "locationsText": "US - Austin, TX",
+              "postedOn": "Posted 3 Days Ago",
+              "bulletFields": [
+                "R-10432"
+              ]
+            },
+            {
+              "title": "Senior Software Engineer, Simulation",
+              "externalPath": "/job/US---Austin-TX/Senior-Software-Engineer--Simulation_R-10388",
+              "locationsText": "2 Locations",
+              "postedOn": "Posted 30+ Days Ago",
+              "remoteType": "Hybrid",
+              "bulletFields": [
+                "R-10388"
+              ]
+            },
+            {
+              "title": "Software Engineer, Firmware",
+              "externalPath": "/job/US---Seattle-WA/Software-Engineer--Firmware_R-10401",
+              "locationsText": "US - Seattle, WA",
+              "postedOn": "Posted Today",
+              "bulletFields": [
+                "R-10401"
+              ]
+            },
+            {
+              "title": "Technical Program Manager",
+              "externalPath": "/job/US---Seattle-WA/Technical-Program-Manager_R-10377",
+              "locationsText": "US - Seattle, WA",
+              "postedOn": "Posted Yesterday",
+              "bulletFields": [
+                "R-10377"
+              ]
+            }
+          ],
+          "facets": [
+            {
+              "facetParameter": "locationMainGroup",
+              "descriptor": "Locations",
+              "values": [
+                {
+                  "facetParameter": "locations",
+                  "descriptor": "Locations",
+                  "values": [
+                    {
+                      "descriptor": "US - Austin, TX",
+                      "id": "3a1f5c7e9b2d4f6a8c0e2b4d6f8a0c2e",
+                      "count": 2
+                    },
+                    {
+                      "descriptor": "US - Seattle, WA",
+                      "id": "9e7c5a3f1d9b7e5c3a1f9d7b5e3c1a9f",
+                      "count": 5
+                    },
+                    {
+                      "descriptor": "US - Remote",
+                      "id": "5b3d1f9a7c5e3b1d9f7a5c3e1b9d7f5a",
+                      "count": 1
+                    }
+                  ]
+                },
+                {
+                  "facetParameter": "locationCountry",
+                  "descriptor": "Location Country",
+                  "values": [
+                    {
+                      "descriptor": "United States of America",
+                      "id": "bc33aa3152ec42d4995f4791a106ed09",
+                      "count": 8
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "facetParameter": "timeType",
+              "descriptor": "Time Type",
+              "values": [
+                {
+                  "descriptor": "Full time",
+                  "id": "6f1d4c8a2e0b4d6f8a1c3e5b7d9f1a3c",
+                  "count": 8
+                }
+              ]
+            }
+          ],
+          "userAuthenticated": false
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "url": "https://northwind.wd5.myworkdayjobs.com/wday/cxs/northwind/Careers/jobs",
+        "body": "{\"appliedFacets\":{\"locations\":[\"3a1f5c7e9b2d4f6a8c0e2b4d6f8a0c2e\"]},\"limit\":20,\"offset\":0,\"searchText\":\"software engineer\"}"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "json": {
+          "total": 2,
+          "jobPostings": [
+            {
+              "title": "Software Engineer III",
+              "externalPath": "/job/US---Austin-TX/Software-Engineer-III_R-10432",
+              "locationsText": "US - Austin, TX",
+              "postedOn": "Posted 3 Days Ago",
+              "bulletFields": [
+                "R-10432"
+              ]
+            },
+            {
+              "title": "Senior Software Engineer, Simulation",
+              "externalPath": "/job/US---Austin-TX/Senior-Software-Engineer--Simulation_R-10388",
+              "locationsText": "2 Locations",
+              "postedOn": "Posted 30+ Days Ago",
+              "remoteType": "Hybrid",
+              "bulletFields": [
+                "R-10388"
+              ]
+            }
+          ],
+          "facets": [
+            {
+              "facetParameter": "locationMainGroup",
+              "descriptor": "Locations",
+              "values": [
+                {
+                  "facetParameter": "locations",
+                  "descriptor": "Locations",
+                  "values": [
+                    {
+                      "descriptor": "US - Austin, TX",
+                      "id": "3a1f5c7e9b2d4f6a8c0e2b4d6f8a0c2e",
+                      "count": 2
+                    },
+                    {
+                      "descriptor": "US - Seattle, WA",
+                      "id": "9e7c5a3f1d9b7e5c3a1f9d7b5e3c1a9f",
+                      "count": 5
+                    },
+                    {
+                      "descriptor": "US - Remote",
+                      "id": "5b3d1f9a7c5e3b1d9f7a5c3e1b9d7f5a",
+                      "count": 1
+                    }
+                  ]
+                },
+                {
+                  "facetParameter": "locationCountry",
+                  "descriptor": "Location Country",
+                  "values": [
+                    {
+                      "descriptor": "United States of America",
+                      "id": "bc33aa3152ec42d4995f4791a106ed09",
+                      "count": 8
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "facetParameter": "timeType",
+              "descriptor": "Time Type",
+              "values": [
+                {
+                  "descriptor": "Full time",
+                  "id": "6f1d4c8a2e0b4d6f8a1c3e5b7d9f1a3c",
+                  "count": 8
+                }
+              ]
+            }
+          ],
+          "userAuthenticated": false
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "url": "https://northwind.wd5.myworkdayjobs.com/wday/cxs/northwind/Careers/job/US---Austin-TX/Software-Engineer-III_R-10432"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "json": {
+          "jobPostingInfo": {
+            "id": "f3a9c1e7b5d34f2a8c6e0b4d2f8a6c4e",
+            "title": "Software Engineer III",
+            "jobDescription": "<p>Join the team that writes the software inside every Northwind robot.</p><p><b>Responsibilities</b></p><ul><li>Design, build and test embedded Linux services</li><li>Work with field teams on issues from live sites</li></ul><p><b>Basic qualifications</b></p><ul><li>Bachelor&#39;s degree or equivalent experience</li><li>4+ years of software engineering</li></ul>",
+            "location": "US - Austin, TX",
+            "postedOn": "Posted 3 Days Ago",
+            "startDate": "2026-11-14",
+            "timeType": "Full time",
+            "jobReqId": "R-10432",
+            "country": {
+              "descriptor": "United States of America",
+              "id": "bc33aa3152ec42d4995f4791a106ed09"
+            },
+            "canApply": true,
+            "posted": true,
+            "externalUrl": "https://northwind.wd5.myworkdayjobs.com/Careers/job/US---Austin-TX/Software-Engineer-III_R-10432"
+          },
+          "hiringOrganization": {
+            "name": "Northwind Robotics, Inc.",
+            "url": ""
+          },
+          "userAuthenticated": false
+        }
+      }
+    }
+  ]
+}

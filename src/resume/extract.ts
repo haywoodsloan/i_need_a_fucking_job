@@ -36,7 +36,7 @@ export function buildTextSource(
  */
 export function docxHtmlToText(html: string): string {
   return decodeEntities(
-    html
+    rowsToLines(html)
       .replace(/<br\s*\/?>/gi, '\n')
       .replace(/<li[^>]*>/gi, '\n• ')
       .replace(/<\/(td|th)>/gi, '   ')
@@ -48,6 +48,24 @@ export function docxHtmlToText(html: string): string {
     .join('\n')
     .replace(/\n{3,}/g, '\n\n')
     .trim();
+}
+
+/**
+ * A table row whose cells hold one line each ("Data Analyst | Mar 2020 – Present") becomes that one line. mammoth
+ * wraps the text of every cell in a paragraph, which would otherwise put each cell on a line of its own.
+ *
+ * A row with more in a cell (a list, several paragraphs, another table) is a page layout and not a line of text.
+ * It is left alone: each of its paragraphs stays a line, cell after cell.
+ */
+function rowsToLines(html: string): string {
+  // Only rows with no row inside them, so the rows of a table within a table are read too.
+  return html.replace(/<tr[^>]*>((?:(?!<tr\b).)*?)<\/tr>/gis, (row: string, inside: string) => {
+    if (/<(table|li|br)\b/i.test(inside)) return row;
+    const cells = [...inside.matchAll(/<t[dh][^>]*>(.*?)<\/t[dh]>/gis)].map((m) => m[1]);
+    if (!cells.length || cells.some((cell) => (cell.match(/<(p|h[1-6]|div)\b/gi) ?? []).length > 1)) return row;
+    const texts = cells.map((cell) => cell.replace(/<\/?(p|h[1-6]|div)[^>]*>/gi, '')).filter((cell) => cell.replace(/<[^>]+>/g, '').trim());
+    return `<p>${texts.join('   ')}</p>`;
+  });
 }
 
 function decodeEntities(s: string): string {
@@ -132,7 +150,10 @@ export function buildPdfSource(
           const gap = r.x - prevEnd;
           const endsSpace = /\s$/.test(text);
           const startsSpace = /^\s/.test(r.str);
-          if (gap > avgChar * 3) text = text.replace(/\s+$/, '') + '   ';
+          // A column break only means something after visible text. Before any, there is nothing on this line to
+          // trim back to, and trimming would run on into the line above and join the two.
+          const hasText = text.slice(lineStart).trim().length > 0;
+          if (gap > avgChar * 3 && hasText) text = text.replace(/\s+$/, '') + '   ';
           else if (gap > avgChar * 0.25 && !endsSpace && !startsSpace) text += ' ';
         }
         const s = text.length;

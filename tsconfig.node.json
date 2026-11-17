@@ -10,5 +10,6 @@
     "noEmit": true,
     "types": ["node"]
   },
-  "include": ["vite.config.ts", "test", "server/src"]
+  "include": ["vite.config.ts", "vitest.config.ts", "test", "server/src"],
+  "exclude": ["test/e2e"]
 }

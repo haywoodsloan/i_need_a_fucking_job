@@ -1,0 +1,120 @@
+{
+  "source": "usajobs",
+  "origin": "handwritten",
+  "date": "2026-11-17",
+  "note": "Handwritten from the fields the adapter reads and the shape the service documents. The company \"Northwind Robotics\" and every posting are made up. It exercises the code, but it cannot notice the live service changing: replace it with a recording (npm run fixtures:record) from a machine that can reach the service.",
+  "search": {
+    "query": {
+      "role": "software engineer",
+      "location": "Austin, TX",
+      "distanceMiles": 25
+    },
+    "env": {
+      "USAJOBS_API_KEY": "REDACTED",
+      "USAJOBS_USER_AGENT": "someone@example.com"
+    }
+  },
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "url": "https://data.usajobs.gov/api/search?Keyword=software+engineer&ResultsPerPage=50&LocationName=Austin%2C+TX&Radius=25"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "json": {
+          "LanguageCode": "EN",
+          "SearchParameters": {},
+          "SearchResult": {
+            "SearchResultCount": 1,
+            "SearchResultCountAll": 1,
+            "SearchResultItems": [
+              {
+                "MatchedObjectId": "812345600",
+                "MatchedObjectDescriptor": {
+                  "PositionID": "SAMPLE-26-12345678",
+                  "PositionTitle": "IT Specialist (Applications Software)",
+                  "PositionURI": "https://www.usajobs.gov:443/job/812345600",
+                  "ApplyURI": [
+                    "https://www.usajobs.gov:443/job/812345600?PostingChannelID="
+                  ],
+                  "PositionLocationDisplay": "Austin, Texas",
+                  "PositionLocation": [
+                    {
+                      "LocationName": "Austin, Texas",
+                      "CountryCode": "United States",
+                      "CountrySubDivisionCode": "Texas",
+                      "CityName": "Austin, Texas",
+                      "Longitude": -97.7437,
+                      "Latitude": 30.2711
+                    }
+                  ],
+                  "OrganizationName": "Sample Agency (handwritten fixture)",
+                  "DepartmentName": "Sample Department",
+                  "JobCategory": [
+                    {
+                      "Name": "Information Technology Management",
+                      "Code": "2210"
+                    }
+                  ],
+                  "JobGrade": [
+                    {
+                      "Code": "GS"
+                    }
+                  ],
+                  "PositionSchedule": [
+                    {
+                      "Name": "Full-time",
+                      "Code": "1"
+                    }
+                  ],
+                  "PositionOfferingType": [
+                    {
+                      "Name": "Permanent",
+                      "Code": "15317"
+                    }
+                  ],
+                  "QualificationSummary": "You must have one year of specialized experience at the next lower grade writing and testing application software.",
+                  "PositionRemuneration": [
+                    {
+                      "MinimumRange": "88520.0",
+                      "MaximumRange": "115079.0",
+                      "RateIntervalCode": "PA",
+                      "Description": "Per Year"
+                    }
+                  ],
+                  "PositionStartDate": "2026-11-06T00:00:00.0000",
+                  "PositionEndDate": "2026-11-20T23:59:59.9970",
+                  "PublicationStartDate": "2026-11-06T00:00:00.0000",
+                  "ApplicationCloseDate": "2026-11-20T23:59:59.9970",
+                  "UserArea": {
+                    "Details": {
+                      "JobSummary": "Handwritten sample. Design, build and maintain the software an agency uses to serve the public.",
+                      "MajorDuties": [
+                        "Write and test application software.",
+                        "Review code written by others."
+                      ],
+                      "TeleworkEligible": true,
+                      "RemoteIndicator": false,
+                      "LowGrade": "12",
+                      "HighGrade": "12"
+                    },
+                    "IsRadialSearch": true
+                  }
+                },
+                "RelevanceRank": 0
+              }
+            ],
+            "UserArea": {
+              "NumberOfPages": "1",
+              "IsRadialSearch": true
+            }
+          }
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,134 @@
+{
+  "source": "ashby",
+  "origin": "handwritten",
+  "date": "2026-11-17",
+  "note": "Handwritten from the fields the adapter reads and the shape the service documents. The company \"Northwind Robotics\" and every posting are made up. It exercises the code, but it cannot notice the live service changing: replace it with a recording (npm run fixtures:record) from a machine that can reach the service.",
+  "search": {
+    "query": {
+      "role": "software engineer",
+      "location": "Austin, TX",
+      "distanceMiles": 25
+    },
+    "options": {
+      "board": "northwind",
+      "company": "Northwind Robotics"
+    }
+  },
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "url": "https://api.ashbyhq.com/posting-api/job-board/northwind?includeCompensation=true"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "json": {
+          "apiVersion": "1",
+          "jobs": [
+            {
+              "id": "2d6f8a31-5c4e-4b7a-9d02-e1f3a5b7c9d1",
+              "title": "Software Engineer, Simulation",
+              "department": "Engineering",
+              "team": "Simulation",
+              "employmentType": "FullTime",
+              "location": "Austin, TX",
+              "secondaryLocations": [
+                {
+                  "location": "Pittsburgh, PA",
+                  "address": {
+                    "postalAddress": {
+                      "addressLocality": "Pittsburgh",
+                      "addressRegion": "Pennsylvania",
+                      "addressCountry": "United States"
+                    }
+                  }
+                }
+              ],
+              "publishedAt": "2026-11-11T17:42:09.214+00:00",
+              "isListed": true,
+              "isRemote": false,
+              "workplaceType": "OnSite",
+              "address": {
+                "postalAddress": {
+                  "addressLocality": "Austin",
+                  "addressRegion": "Texas",
+                  "addressCountry": "United States"
+                }
+              },
+              "jobUrl": "https://jobs.ashbyhq.com/northwind/2d6f8a31-5c4e-4b7a-9d02-e1f3a5b7c9d1",
+              "applyUrl": "https://jobs.ashbyhq.com/northwind/2d6f8a31-5c4e-4b7a-9d02-e1f3a5b7c9d1/application",
+              "descriptionHtml": "<p>Build the simulator our robots are tested in before they touch a real warehouse.</p><ul><li>Model sensors and physics</li><li>Make test runs repeatable</li></ul>",
+              "descriptionPlain": "Build the simulator our robots are tested in before they touch a real warehouse.\n\nModel sensors and physics\nMake test runs repeatable",
+              "compensation": {
+                "compensationTierSummary": "$140K – $180K • Offers Equity",
+                "scrapeableCompensationSalarySummary": "$140K - $180K",
+                "compensationTiers": [],
+                "summaryComponents": []
+              }
+            },
+            {
+              "id": "8a1b3c5d-7e9f-4a2b-8c4d-6e8f0a2b4c6e",
+              "title": "Senior Software Engineer, Cloud",
+              "department": "Engineering",
+              "team": "Cloud",
+              "employmentType": "FullTime",
+              "location": "Remote - US",
+              "secondaryLocations": [],
+              "publishedAt": "2026-11-08T14:05:51.007+00:00",
+              "isListed": true,
+              "isRemote": true,
+              "workplaceType": "Remote",
+              "jobUrl": "https://jobs.ashbyhq.com/northwind/8a1b3c5d-7e9f-4a2b-8c4d-6e8f0a2b4c6e",
+              "applyUrl": "https://jobs.ashbyhq.com/northwind/8a1b3c5d-7e9f-4a2b-8c4d-6e8f0a2b4c6e/application",
+              "descriptionHtml": "<p>Run the cloud services that plan work for every Northwind site.</p>",
+              "descriptionPlain": "Run the cloud services that plan work for every Northwind site.",
+              "compensation": {
+                "compensationTierSummary": "$165K – $205K • Offers Equity",
+                "scrapeableCompensationSalarySummary": "$165K - $205K",
+                "compensationTiers": [],
+                "summaryComponents": []
+              }
+            },
+            {
+              "id": "4f2e0d8c-6b4a-4e2c-a0f8-d6b4a2c0e8f6",
+              "title": "Staff Software Engineer, Autonomy",
+              "department": "Engineering",
+              "team": "Autonomy",
+              "employmentType": "FullTime",
+              "location": "San Francisco, CA",
+              "secondaryLocations": [],
+              "publishedAt": "2026-11-05T19:20:33.540+00:00",
+              "isListed": true,
+              "isRemote": true,
+              "workplaceType": "Hybrid",
+              "jobUrl": "https://jobs.ashbyhq.com/northwind/4f2e0d8c-6b4a-4e2c-a0f8-d6b4a2c0e8f6",
+              "applyUrl": "https://jobs.ashbyhq.com/northwind/4f2e0d8c-6b4a-4e2c-a0f8-d6b4a2c0e8f6/application",
+              "descriptionHtml": "<p>Lead the planning software that decides what each robot does next.</p>",
+              "descriptionPlain": "Lead the planning software that decides what each robot does next."
+            },
+            {
+              "id": "9c7a5e3b-1d9f-4b7d-8f5b-3d1f9b7d5f3b",
+              "title": "Recruiter",
+              "department": "People",
+              "team": "Talent",
+              "employmentType": "FullTime",
+              "location": "Austin, TX",
+              "secondaryLocations": [],
+              "publishedAt": "2026-11-02T15:00:00.000+00:00",
+              "isListed": true,
+              "isRemote": false,
+              "workplaceType": "Hybrid",
+              "jobUrl": "https://jobs.ashbyhq.com/northwind/9c7a5e3b-1d9f-4b7d-8f5b-3d1f9b7d5f3b",
+              "applyUrl": "https://jobs.ashbyhq.com/northwind/9c7a5e3b-1d9f-4b7d-8f5b-3d1f9b7d5f3b/application",
+              "descriptionHtml": "<p>Hire the engineers who build Northwind.</p>",
+              "descriptionPlain": "Hire the engineers who build Northwind."
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

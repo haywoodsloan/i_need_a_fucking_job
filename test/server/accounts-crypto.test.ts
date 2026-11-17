@@ -15,8 +15,8 @@ import {
   toBase64Url,
   unseal,
   type KdfParams,
-} from '../server/src/accounts/crypto';
-import { lockVaultKey, newVaultKey, openVaultKey, passwordKeys, recoveryKey, sessionKeys } from '../server/src/accounts/keys';
+} from '../../server/src/accounts/crypto';
+import { lockVaultKey, newVaultKey, openVaultKey, passwordKeys, recoveryKey, sessionKeys } from '../../server/src/accounts/keys';
 
 const FAST: KdfParams = { alg: 'argon2id', m: 256, t: 1, p: 1 };
 const hex = (b: Uint8Array) => Buffer.from(b).toString('hex');

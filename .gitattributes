@@ -1,0 +1,4 @@
+# One kind of line ending in the working tree on every system, so a file reads the same on Windows and Linux.
+# Without this, Git for Windows checks text files out with Windows line endings, and a test that reads a fixture
+# sees different bytes there than it does in CI.
+* text=auto eol=lf

@@ -1,0 +1,173 @@
+{
+  "source": "smartrecruiters",
+  "origin": "handwritten",
+  "date": "2026-11-17",
+  "note": "Handwritten from the fields the adapter reads and the shape the service documents. The company \"Northwind Robotics\" and every posting are made up. It exercises the code, but it cannot notice the live service changing: replace it with a recording (npm run fixtures:record) from a machine that can reach the service.",
+  "search": {
+    "query": {
+      "role": "software engineer",
+      "location": "Austin, TX",
+      "distanceMiles": 25
+    },
+    "options": {
+      "board": "NorthwindRobotics",
+      "company": "Northwind Robotics"
+    }
+  },
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "url": "https://api.smartrecruiters.com/v1/companies/NorthwindRobotics/postings?q=software+engineer&limit=100&city=Austin"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "json": {
+          "offset": 0,
+          "limit": 100,
+          "totalFound": 2,
+          "content": [
+            {
+              "id": "744000012345678",
+              "name": "Software Engineer, Robot Fleet",
+              "uuid": "0f3b1c5e-2a4d-4e6f-8a0b-1c3d5e7f9a1b",
+              "jobAdId": "a1b2c3d4-0001-4000-8000-000000000001",
+              "defaultJobAd": true,
+              "refNumber": "REF1042A",
+              "company": {
+                "identifier": "NorthwindRobotics",
+                "name": "Northwind Robotics"
+              },
+              "releasedDate": "2026-11-09T14:03:27.000Z",
+              "location": {
+                "city": "Austin",
+                "region": "TX",
+                "country": "us",
+                "remote": false,
+                "hybrid": true,
+                "latitude": "30.267153",
+                "longitude": "-97.7430608",
+                "fullLocation": "Austin, TX, United States"
+              },
+              "industry": {
+                "id": "machinery",
+                "label": "Machinery"
+              },
+              "department": {
+                "id": "501",
+                "label": "Engineering"
+              },
+              "function": {
+                "id": "engineering",
+                "label": "Engineering"
+              },
+              "typeOfEmployment": {
+                "id": "permanent",
+                "label": "Full-time"
+              },
+              "experienceLevel": {
+                "id": "mid_senior_level",
+                "label": "Mid-Senior Level"
+              },
+              "ref": "https://api.smartrecruiters.com/v1/companies/NorthwindRobotics/postings/744000012345678",
+              "language": {
+                "code": "en",
+                "label": "English",
+                "labelNative": "English (US)"
+              }
+            },
+            {
+              "id": "744000012345701",
+              "name": "Engineering Manager, Software",
+              "uuid": "7c9e1a3b-5d7f-4b9d-a1c3-e5f7a9b1c3d5",
+              "jobAdId": "a1b2c3d4-0002-4000-8000-000000000002",
+              "defaultJobAd": true,
+              "refNumber": "REF1055B",
+              "company": {
+                "identifier": "NorthwindRobotics",
+                "name": "Northwind Robotics"
+              },
+              "releasedDate": "2026-11-04T09:30:00.000Z",
+              "location": {
+                "city": "Austin",
+                "region": "TX",
+                "country": "us",
+                "remote": false,
+                "hybrid": false,
+                "fullLocation": "Austin, TX, United States"
+              },
+              "department": {
+                "id": "501",
+                "label": "Engineering"
+              },
+              "typeOfEmployment": {
+                "id": "permanent",
+                "label": "Full-time"
+              },
+              "ref": "https://api.smartrecruiters.com/v1/companies/NorthwindRobotics/postings/744000012345701",
+              "language": {
+                "code": "en",
+                "label": "English",
+                "labelNative": "English (US)"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "url": "https://api.smartrecruiters.com/v1/companies/NorthwindRobotics/postings/744000012345678"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "json": {
+          "id": "744000012345678",
+          "name": "Software Engineer, Robot Fleet",
+          "company": {
+            "identifier": "NorthwindRobotics",
+            "name": "Northwind Robotics"
+          },
+          "releasedDate": "2026-11-09T14:03:27.000Z",
+          "location": {
+            "city": "Austin",
+            "region": "TX",
+            "country": "us",
+            "remote": false,
+            "hybrid": true,
+            "fullLocation": "Austin, TX, United States"
+          },
+          "applyUrl": "https://jobs.smartrecruiters.com/NorthwindRobotics/744000012345678?oga=true",
+          "postingUrl": "https://jobs.smartrecruiters.com/NorthwindRobotics/744000012345678",
+          "jobAd": {
+            "sections": {
+              "companyDescription": {
+                "title": "Company Description",
+                "text": "<p>Northwind Robotics builds warehouse robots that work next to people.</p>"
+              },
+              "jobDescription": {
+                "title": "Job Description",
+                "text": "<p>Write the software that keeps a fleet of robots moving.</p><ul><li>Plan routes</li><li>Handle faults safely</li></ul>"
+              },
+              "qualifications": {
+                "title": "Qualifications",
+                "text": "<ul><li>3+ years of software engineering</li><li>Python or C++</li></ul>"
+              },
+              "additionalInformation": {
+                "title": "Additional Information",
+                "text": ""
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

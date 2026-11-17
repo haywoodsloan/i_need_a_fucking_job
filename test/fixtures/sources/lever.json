@@ -1,0 +1,127 @@
+{
+  "source": "lever",
+  "origin": "handwritten",
+  "date": "2026-11-17",
+  "note": "Handwritten from the fields the adapter reads and the shape the service documents. The company \"Northwind Robotics\" and every posting are made up. It exercises the code, but it cannot notice the live service changing: replace it with a recording (npm run fixtures:record) from a machine that can reach the service.",
+  "search": {
+    "query": {
+      "role": "software engineer",
+      "location": "Austin, TX",
+      "distanceMiles": 25
+    },
+    "options": {
+      "board": "northwind",
+      "company": "Northwind Robotics"
+    }
+  },
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "url": "https://api.lever.co/v0/postings/northwind?mode=json"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "json": [
+          {
+            "additional": "<div>Northwind offers medical, dental and vision cover, and a yearly learning budget.</div>",
+            "additionalPlain": "Northwind offers medical, dental and vision cover, and a yearly learning budget.",
+            "categories": {
+              "commitment": "Full-time",
+              "department": "Engineering",
+              "location": "Austin, TX",
+              "team": "Fleet Software",
+              "allLocations": [
+                "Austin, TX",
+                "Denver, CO"
+              ]
+            },
+            "createdAt": 1794441600000,
+            "descriptionPlain": "Build the software that schedules thousands of robots across a warehouse floor.",
+            "description": "<div>Build the software that schedules thousands of robots across a warehouse floor.</div>",
+            "id": "6f1c2b9e-3a47-4d0e-9a51-0c5d7e2f8a10",
+            "lists": [
+              {
+                "text": "What you will do",
+                "content": "<li>Write Go services that plan robot routes</li><li>Measure and improve throughput</li>"
+              },
+              {
+                "text": "What we look for",
+                "content": "<li>3+ years of backend work</li><li>Comfort with queues and distributed systems</li>"
+              }
+            ],
+            "text": "Software Engineer II, Fleet",
+            "country": "US",
+            "workplaceType": "hybrid",
+            "opening": "",
+            "openingPlain": "",
+            "descriptionBody": "",
+            "descriptionBodyPlain": "",
+            "hostedUrl": "https://jobs.lever.co/northwind/6f1c2b9e-3a47-4d0e-9a51-0c5d7e2f8a10",
+            "applyUrl": "https://jobs.lever.co/northwind/6f1c2b9e-3a47-4d0e-9a51-0c5d7e2f8a10/apply",
+            "salaryRange": {
+              "currency": "USD",
+              "interval": "per-year-salary",
+              "min": 130000,
+              "max": 165000
+            }
+          },
+          {
+            "additional": "",
+            "additionalPlain": "",
+            "categories": {
+              "commitment": "Full-time",
+              "department": "Engineering",
+              "location": "Remote",
+              "team": "Infrastructure",
+              "allLocations": [
+                "Remote"
+              ]
+            },
+            "createdAt": 1794182400000,
+            "descriptionPlain": "Keep our build, deploy and observability systems fast and boring.",
+            "description": "<div>Keep our build, deploy and observability systems fast and boring.</div>",
+            "id": "b7d0a4e2-91c3-4f6a-8e2d-5a3c9f1b6d44",
+            "lists": [
+              {
+                "text": "What you will do",
+                "content": "<li>Own CI and release tooling</li><li>Run Kubernetes clusters</li>"
+              }
+            ],
+            "text": "Software Engineer, Infrastructure",
+            "country": "US",
+            "workplaceType": "remote",
+            "hostedUrl": "https://jobs.lever.co/northwind/b7d0a4e2-91c3-4f6a-8e2d-5a3c9f1b6d44",
+            "applyUrl": "https://jobs.lever.co/northwind/b7d0a4e2-91c3-4f6a-8e2d-5a3c9f1b6d44/apply"
+          },
+          {
+            "additional": "",
+            "additionalPlain": "",
+            "categories": {
+              "commitment": "Full-time",
+              "department": "Design",
+              "location": "Austin, TX",
+              "team": "Product",
+              "allLocations": [
+                "Austin, TX"
+              ]
+            },
+            "createdAt": 1793923200000,
+            "descriptionPlain": "Design the screens warehouse staff use to work with our robots.",
+            "description": "<div>Design the screens warehouse staff use to work with our robots.</div>",
+            "id": "c3e8f5a1-2b7d-4c9e-a6f0-7d1e4b8c2f95",
+            "lists": [],
+            "text": "Product Designer",
+            "country": "US",
+            "workplaceType": "onsite",
+            "hostedUrl": "https://jobs.lever.co/northwind/c3e8f5a1-2b7d-4c9e-a6f0-7d1e4b8c2f95",
+            "applyUrl": "https://jobs.lever.co/northwind/c3e8f5a1-2b7d-4c9e-a6f0-7d1e4b8c2f95/apply"
+          }
+        ]
+      }
+    }
+  ]
+}

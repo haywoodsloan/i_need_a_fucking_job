@@ -1,0 +1,168 @@
+{
+  "source": "greenhouse",
+  "origin": "handwritten",
+  "date": "2026-11-17",
+  "note": "Handwritten from the fields the adapter reads and the shape the service documents. The company \"Northwind Robotics\" and every posting are made up. It exercises the code, but it cannot notice the live service changing: replace it with a recording (npm run fixtures:record) from a machine that can reach the service.",
+  "search": {
+    "query": {
+      "role": "software engineer",
+      "location": "Austin, TX",
+      "distanceMiles": 25
+    },
+    "options": {
+      "board": "northwind",
+      "company": "Northwind Robotics"
+    }
+  },
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "url": "https://boards-api.greenhouse.io/v1/boards/northwind/jobs?content=true"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "json": {
+          "jobs": [
+            {
+              "absolute_url": "https://job-boards.greenhouse.io/northwind/jobs/4012345",
+              "data_compliance": [
+                {
+                  "type": "gdpr",
+                  "requires_consent": false,
+                  "requires_processing_consent": false,
+                  "requires_retention_consent": false,
+                  "retention_period": null,
+                  "demographic_data_consent_applies": false
+                }
+              ],
+              "internal_job_id": 2007001,
+              "location": {
+                "name": "Austin, TX"
+              },
+              "metadata": null,
+              "id": 4012345,
+              "updated_at": "2026-11-10T16:20:11-05:00",
+              "requisition_id": "R-1042",
+              "title": "Senior Software Engineer, Perception",
+              "company_name": "Northwind Robotics",
+              "first_published": "2026-11-03T09:00:00-05:00",
+              "content": "&lt;p&gt;Northwind Robotics builds warehouse robots that work next to people. You will own the perception stack that tells a robot where it is and what is around it.&lt;/p&gt;&lt;h3&gt;What you will do&lt;/h3&gt;&lt;ul&gt;&lt;li&gt;Design and ship C++ and Python services for sensor fusion&lt;/li&gt;&lt;li&gt;Review code and mentor two engineers&lt;/li&gt;&lt;li&gt;Work with hardware on camera &amp;amp; lidar bring-up&lt;/li&gt;&lt;/ul&gt;&lt;h3&gt;What we look for&lt;/h3&gt;&lt;ul&gt;&lt;li&gt;5+ years building production software&lt;/li&gt;&lt;li&gt;Experience with ROS 2, OpenCV or similar&lt;/li&gt;&lt;/ul&gt;",
+              "departments": [
+                {
+                  "id": 301,
+                  "name": "Engineering",
+                  "child_ids": [],
+                  "parent_id": null
+                }
+              ],
+              "offices": [
+                {
+                  "id": 11,
+                  "name": "Austin",
+                  "location": "Austin, Texas, United States",
+                  "child_ids": [],
+                  "parent_id": null
+                }
+              ]
+            },
+            {
+              "absolute_url": "https://job-boards.greenhouse.io/northwind/jobs/4012399",
+              "internal_job_id": 2007014,
+              "location": {
+                "name": "Remote - United States"
+              },
+              "metadata": null,
+              "id": 4012399,
+              "updated_at": "2026-11-14T11:02:45-05:00",
+              "requisition_id": "R-1061",
+              "title": "Software Engineer, Platform",
+              "company_name": "Northwind Robotics",
+              "first_published": "2026-11-12T10:30:00-05:00",
+              "content": "&lt;p&gt;Our platform team runs the services every robot talks to. This role is remote within the United States.&lt;/p&gt;&lt;ul&gt;&lt;li&gt;Build APIs in TypeScript and Go&lt;/li&gt;&lt;li&gt;Run PostgreSQL and Kubernetes in production&lt;/li&gt;&lt;li&gt;Share an on-call rotation&lt;/li&gt;&lt;/ul&gt;",
+              "departments": [
+                {
+                  "id": 301,
+                  "name": "Engineering",
+                  "child_ids": [],
+                  "parent_id": null
+                }
+              ],
+              "offices": []
+            },
+            {
+              "absolute_url": "https://job-boards.greenhouse.io/northwind/jobs/4012400",
+              "internal_job_id": 2007015,
+              "location": {
+                "name": "Austin, TX"
+              },
+              "metadata": null,
+              "id": 4012400,
+              "updated_at": "2026-11-09T08:00:00-05:00",
+              "requisition_id": "R-1050",
+              "title": "Account Executive",
+              "company_name": "Northwind Robotics",
+              "first_published": "2026-11-01T08:00:00-05:00",
+              "content": "&lt;p&gt;Sell Northwind robots to warehouse operators across the central United States.&lt;/p&gt;",
+              "departments": [
+                {
+                  "id": 302,
+                  "name": "Sales",
+                  "child_ids": [],
+                  "parent_id": null
+                }
+              ],
+              "offices": [
+                {
+                  "id": 11,
+                  "name": "Austin",
+                  "location": "Austin, Texas, United States",
+                  "child_ids": [],
+                  "parent_id": null
+                }
+              ]
+            },
+            {
+              "absolute_url": "https://job-boards.greenhouse.io/northwind/jobs/4012410",
+              "internal_job_id": 2007020,
+              "location": {
+                "name": "Boston, MA"
+              },
+              "metadata": null,
+              "id": 4012410,
+              "updated_at": "2026-11-15T13:45:00-05:00",
+              "requisition_id": "R-1066",
+              "title": "Software Engineer, Controls",
+              "company_name": "Northwind Robotics",
+              "first_published": "2026-11-13T09:15:00-05:00",
+              "content": "&lt;p&gt;Write the motion control software for our next arm. Based in Boston.&lt;/p&gt;",
+              "departments": [
+                {
+                  "id": 301,
+                  "name": "Engineering",
+                  "child_ids": [],
+                  "parent_id": null
+                }
+              ],
+              "offices": [
+                {
+                  "id": 12,
+                  "name": "Boston",
+                  "location": "Boston, Massachusetts, United States",
+                  "child_ids": [],
+                  "parent_id": null
+                }
+              ]
+            }
+          ],
+          "meta": {
+            "total": 4
+          }
+        }
+      }
+    }
+  ]
+}

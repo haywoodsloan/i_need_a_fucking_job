@@ -1,0 +1,73 @@
+{
+  "source": "remoteok",
+  "origin": "handwritten",
+  "date": "2026-11-17",
+  "note": "Handwritten from the fields the adapter reads and the shape the service documents. The company \"Northwind Robotics\" and every posting are made up. It exercises the code, but it cannot notice the live service changing: replace it with a recording (npm run fixtures:record) from a machine that can reach the service.",
+  "search": {
+    "query": {
+      "role": "software engineer",
+      "location": "Austin, TX",
+      "distanceMiles": 25
+    }
+  },
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "url": "https://remoteok.com/api"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "json": [
+          {
+            "last_updated": 1794938400,
+            "legal": "API Terms of Service: Please link back to Remote OK and mention it as a source."
+          },
+          {
+            "slug": "remote-senior-software-engineer-northwind-robotics-1093211",
+            "id": "1093211",
+            "epoch": 1794693607,
+            "date": "2026-11-14T22:00:07+00:00",
+            "company": "Northwind Robotics",
+            "company_logo": "https://remoteok.com/assets/img/jobs/northwind-1093211.png",
+            "position": "Senior Software Engineer",
+            "tags": [
+              "engineer",
+              "backend",
+              "golang"
+            ],
+            "logo": "https://remoteok.com/assets/img/jobs/northwind-1093211.png",
+            "description": "&lt;p&gt;Build the cloud side of a robot fleet. Fully remote.&lt;/p&gt;&lt;ul&gt;&lt;li&gt;Go and PostgreSQL&lt;/li&gt;&lt;li&gt;Four day week&lt;/li&gt;&lt;/ul&gt;",
+            "location": "Worldwide",
+            "salary_min": 120000,
+            "salary_max": 160000,
+            "apply_url": "https://remoteok.com/remote-jobs/remote-senior-software-engineer-northwind-robotics-1093211",
+            "url": "https://remoteok.com/remote-jobs/remote-senior-software-engineer-northwind-robotics-1093211"
+          },
+          {
+            "slug": "remote-customer-support-lead-northwind-robotics-1093150",
+            "id": "1093150",
+            "epoch": 1794607200,
+            "date": "2026-11-13T22:00:00+00:00",
+            "company": "Northwind Robotics",
+            "company_logo": "",
+            "position": "Customer Support Lead",
+            "tags": [
+              "support"
+            ],
+            "logo": "",
+            "description": "&lt;p&gt;Help warehouse teams get the most from their robots.&lt;/p&gt;",
+            "location": "North America",
+            "salary_min": 0,
+            "salary_max": 0,
+            "apply_url": "https://remoteok.com/remote-jobs/remote-customer-support-lead-northwind-robotics-1093150",
+            "url": "https://remoteok.com/remote-jobs/remote-customer-support-lead-northwind-robotics-1093150"
+          }
+        ]
+      }
+    }
+  ]
+}

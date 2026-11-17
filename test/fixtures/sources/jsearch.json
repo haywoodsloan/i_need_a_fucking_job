@@ -1,0 +1,109 @@
+{
+  "source": "jsearch",
+  "origin": "handwritten",
+  "date": "2026-11-17",
+  "note": "Handwritten from the fields the adapter reads and the shape the service documents. The company \"Northwind Robotics\" and every posting are made up. It exercises the code, but it cannot notice the live service changing: replace it with a recording (npm run fixtures:record) from a machine that can reach the service.",
+  "search": {
+    "query": {
+      "role": "software engineer",
+      "location": "Austin, TX",
+      "distanceMiles": 25
+    },
+    "env": {
+      "JSEARCH_API_KEY": "REDACTED"
+    }
+  },
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "url": "https://jsearch.p.rapidapi.com/search?query=software+engineer+in+Austin%2C+TX&page=1&num_pages=2&radius=40"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "json": {
+          "status": "OK",
+          "request_id": "00000000-0000-4000-8000-000000000000",
+          "parameters": {
+            "query": "software engineer in austin, tx",
+            "page": 1,
+            "num_pages": 2
+          },
+          "data": [
+            {
+              "job_id": "sAmPlE_jsearch_0001AAAAAA==",
+              "job_title": "Software Engineer, Perception",
+              "employer_name": "Northwind Robotics",
+              "employer_logo": null,
+              "employer_website": null,
+              "job_publisher": "LinkedIn",
+              "job_employment_type": "FULLTIME",
+              "job_apply_link": "https://www.linkedin.com/jobs/view/software-engineer-perception-at-northwind-robotics-4100000001",
+              "job_apply_is_direct": false,
+              "apply_options": [
+                {
+                  "publisher": "LinkedIn",
+                  "apply_link": "https://www.linkedin.com/jobs/view/software-engineer-perception-at-northwind-robotics-4100000001",
+                  "is_direct": false
+                },
+                {
+                  "publisher": "Indeed",
+                  "apply_link": "https://www.indeed.com/viewjob?jk=0123456789abcdef",
+                  "is_direct": false
+                },
+                {
+                  "publisher": "Northwind Robotics Careers",
+                  "apply_link": "https://job-boards.greenhouse.io/northwind/jobs/4012345",
+                  "is_direct": true
+                }
+              ],
+              "job_description": "Northwind Robotics builds warehouse robots that work next to people. You will own the perception stack that tells a robot where it is and what is around it.\n\nWhat you will do\n• Design and ship C++ and Python services for sensor fusion\n• Review code and mentor two engineers",
+              "job_is_remote": false,
+              "job_posted_at_timestamp": 1794700800,
+              "job_posted_at_datetime_utc": "2026-11-15T00:00:00.000Z",
+              "job_location": "Austin, TX",
+              "job_city": "Austin",
+              "job_state": "Texas",
+              "job_country": "US",
+              "job_google_link": "https://www.google.com/search?q=jobs&ibp=htl;jobs#htivrt=jobs&htidocid=sAmPlE_jsearch_0001AAAAAA%3D%3D",
+              "job_min_salary": 135000,
+              "job_max_salary": 170000,
+              "job_salary_currency": "USD",
+              "job_salary_period": "YEAR"
+            },
+            {
+              "job_id": "sAmPlE_jsearch_0002AAAAAA==",
+              "job_title": "Backend Developer (Remote)",
+              "employer_name": "Contoso Logistics",
+              "employer_logo": "https://encrypted-tbn0.gstatic.com/images?q=tbn:sample",
+              "job_publisher": "Glassdoor",
+              "job_employment_type": "CONTRACTOR",
+              "job_apply_link": "https://www.glassdoor.com/job-listing/backend-developer-contoso-logistics-JV_KO0,17_KE18,35.htm?jl=1000000000001",
+              "apply_options": [
+                {
+                  "publisher": "Glassdoor",
+                  "apply_link": "https://www.glassdoor.com/job-listing/backend-developer-contoso-logistics-JV_KO0,17_KE18,35.htm?jl=1000000000001",
+                  "is_direct": false
+                }
+              ],
+              "job_description": "Six month contract building APIs for a shipping platform. Remote within the US.",
+              "job_is_remote": true,
+              "job_posted_at_datetime_utc": "2026-11-13T00:00:00.000Z",
+              "job_location": null,
+              "job_city": null,
+              "job_state": null,
+              "job_country": "US",
+              "job_min_salary": null,
+              "job_max_salary": null,
+              "job_salary_currency": null,
+              "job_salary_period": null
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

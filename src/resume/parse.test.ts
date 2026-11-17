@@ -1,14 +1,14 @@
-import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+// Read through Vite (`?raw`) and not node:fs: files under src/ are checked as browser code.
+import basicResume from '../../test/fixtures/resumes/basic.txt?raw';
 import { buildTextSource, docxHtmlToText } from './extract';
 import { checkIntegrity, listFields, sourceCoverage, toApplicationProfile, updateField } from './model';
 import { parseResume } from './parse';
 
-const load = (name: string) => readFileSync(new URL(`../../test/fixtures/${name}`, import.meta.url), 'utf8');
 const src = (text: string) => buildTextSource(text, { fileName: 'r.txt', mimeType: 'text/plain', kind: 'text', sha256: 'x' });
 
 describe('parseResume on a plain-text resume', () => {
-  const r = parseResume(src(load('resume-basic.txt')));
+  const r = parseResume(src(basicResume));
 
   it('extracts contact details verbatim', () => {
     expect(r.contact.name?.value).toBe('Jordan A. Rivera');
@@ -70,7 +70,7 @@ describe('parseResume on a plain-text resume', () => {
 });
 
 describe('integrity guarantees', () => {
-  const r = parseResume(src(load('resume-basic.txt')));
+  const r = parseResume(src(basicResume));
 
   it('flags a source field whose value no longer matches its span', () => {
     const ref = listFields(r).find((f) => f.label === 'Email')!;

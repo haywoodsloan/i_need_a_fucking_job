@@ -10,7 +10,8 @@
     "dev": "tsx watch src/index.ts",
     "smoke": "tsx src/smoke.ts",
     "check:catalog": "tsx src/check-catalog.ts",
-    "admin": "tsx src/admin.ts"
+    "admin": "tsx src/admin.ts",
+    "record": "tsx src/record-fixtures.ts"
   },
   "dependencies": {
     "@electric-sql/pglite": "0.5.16",

@@ -3,7 +3,7 @@ import { createServer, request, type Server } from 'node:http';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { APP_CSP, NoBuiltApp, loadApp, requestUrl } from '../server/src/static';
+import { APP_CSP, NoBuiltApp, loadApp, requestUrl } from '../../server/src/static';
 
 const INDEX = '<!doctype html>\n<html>\n  <head>\n    <title>App</title>\n  </head>\n  <body><div id="root"></div></body>\n</html>\n';
 

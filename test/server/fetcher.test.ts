@@ -2,11 +2,11 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { browserTier, wantsPage } from '../server/src/browser';
-import { createFetcher, isBotCheckPage, siteOf, type FetcherOptions, type FetchTier, type TierFailure } from '../server/src/fetcher';
-import { loadCustomTiers } from '../server/src/tiers';
-import { BlockedError } from '../src/jobs/adapters/common';
-import type { FetchLike } from '../src/jobs/types';
+import { browserTier, wantsPage } from '../../server/src/browser';
+import { createFetcher, isBotCheckPage, siteOf, type FetcherOptions, type FetchTier, type TierFailure } from '../../server/src/fetcher';
+import { loadCustomTiers } from '../../server/src/tiers';
+import { BlockedError } from '../../src/jobs/adapters/common';
+import type { FetchLike } from '../../src/jobs/types';
 
 /** A fetcher on a fake clock: sleeping just moves time forward, so nothing in these tests waits. */
 function setup(net: FetchLike, opts: FetcherOptions = {}) {

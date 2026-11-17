@@ -1,8 +1,9 @@
 name: CI and deploy
 
+# Every push is checked, on any branch. Only main is deployed, and only when every check passed.
+# docs/testing.md says what each step runs and how to run it on your own machine.
 on:
   push:
-    branches: [main]
   pull_request:
 
 permissions:
@@ -14,31 +15,66 @@ concurrency:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    name: Checks (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      # The app is run on Windows and hosted on Linux, so both must pass, and a failure on one should not hide
+      # what the other one says.
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            server/package-lock.json
       - run: npm ci
       - run: npm ci
         working-directory: server
-        env:
-          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
-      - run: npm run typecheck
-      - run: npm test
-      - run: npm run build
+
+      - name: Type check
+        run: npm run typecheck
+
+      # Unit, component and integration tests. On Linux the run also measures coverage and fails under the
+      # minimum set in vitest.config.ts.
+      - name: Tests with coverage
+        if: runner.os == 'Linux'
+        run: npm run test:coverage
+      - name: Tests
+        if: runner.os != 'Linux'
+        run: npm test
+
+      # The built app in a real browser.
+      - name: Install the browser for the browser tests
+        run: npx playwright install ${{ runner.os == 'Linux' && '--with-deps' || '' }} --only-shell chromium
+      - name: Browser tests
+        run: npm run test:e2e
+
+      - name: Build
+        run: npm run build
         env:
           # Public URL of the search backend (repo → Settings → Variables). Not a secret.
           VITE_API_URL: ${{ vars.VITE_API_URL }}
-      - if: github.ref == 'refs/heads/main'
+
+      - name: Keep the coverage report
+        if: runner.os == 'Linux' && !cancelled()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage
+          if-no-files-found: ignore
+          retention-days: 14
+      - if: runner.os == 'Linux' && github.ref == 'refs/heads/main' && github.event_name == 'push'
         uses: actions/upload-pages-artifact@v3
         with:
           path: dist
 
   deploy:
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     needs: test
     runs-on: ubuntu-latest
     permissions:

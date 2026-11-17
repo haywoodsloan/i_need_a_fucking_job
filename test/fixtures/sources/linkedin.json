@@ -1,0 +1,44 @@
+{
+  "source": "linkedin",
+  "origin": "handwritten",
+  "date": "2026-11-17",
+  "note": "Handwritten from the fields the adapter reads and the shape the service documents. The company \"Northwind Robotics\" and every posting are made up. It exercises the code, but it cannot notice the live service changing: replace it with a recording (npm run fixtures:record) from a machine that can reach the service.",
+  "search": {
+    "query": {
+      "role": "software engineer",
+      "location": "Austin, TX",
+      "distanceMiles": 25
+    },
+    "env": {
+      "ENABLE_LINKEDIN_GUEST": "1"
+    }
+  },
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "url": "https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?keywords=software+engineer&start=0&location=Austin%2C+TX&distance=25"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "text/html; charset=utf-8"
+        },
+        "text": "<!DOCTYPE html>\n<li>\n  <div class=\"base-card relative w-full hover:no-underline focus:no-underline base-card--link base-search-card base-search-card--link job-search-card\" data-entity-urn=\"urn:li:jobPosting:4100000001\" data-tracking-id=\"sample1\">\n    <a class=\"base-card__full-link absolute top-0 right-0 bottom-0 left-0 p-0 z-[2]\" href=\"https://www.linkedin.com/jobs/view/software-engineer-perception-at-northwind-robotics-4100000001?position=1&amp;pageNum=0\">\n      <span class=\"sr-only\">Software Engineer, Perception</span>\n    </a>\n    <div class=\"search-entity-media\">\n      <img class=\"artdeco-entity-image artdeco-entity-image--square-4\" data-delayed-url=\"https://media.licdn.com/dms/image/sample/company-logo_100_100/0/1?e=2147483647&amp;v=beta&amp;t=sample\" alt=\"\">\n    </div>\n    <div class=\"base-search-card__info\">\n      <h3 class=\"base-search-card__title\">\n        Software Engineer, Perception\n      </h3>\n      <h4 class=\"base-search-card__subtitle\">\n        <a class=\"hidden-nested-link\" href=\"https://www.linkedin.com/company/northwind-robotics?trk=public_jobs_jserp-result_job-search-card-subtitle\">\n          Northwind Robotics\n        </a>\n      </h4>\n      <div class=\"base-search-card__metadata\">\n        <span class=\"job-search-card__location\">\n          Austin, TX\n        </span>\n        <span class=\"job-search-card__salary-info\">\n          $135,000.00 - $170,000.00\n        </span>\n        <time class=\"job-search-card__listdate\" datetime=\"2026-11-14\">\n          3 days ago\n        </time>\n      </div>\n    </div>\n  </div>\n</li>\n<li>\n  <div class=\"base-card relative w-full hover:no-underline focus:no-underline base-card--link base-search-card base-search-card--link job-search-card\" data-entity-urn=\"urn:li:jobPosting:4100000002\" data-tracking-id=\"sample2\">\n    <a class=\"base-card__full-link absolute top-0 right-0 bottom-0 left-0 p-0 z-[2]\" href=\"https://www.linkedin.com/jobs/view/senior-software-engineer-at-contoso-logistics-4100000002?position=2&amp;pageNum=0\">\n      <span class=\"sr-only\">Senior Software Engineer</span>\n    </a>\n    <div class=\"base-search-card__info\">\n      <h3 class=\"base-search-card__title\">\n        Senior Software Engineer\n      </h3>\n      <h4 class=\"base-search-card__subtitle\">\n        <a class=\"hidden-nested-link\" href=\"https://www.linkedin.com/company/contoso-logistics?trk=public_jobs_jserp-result_job-search-card-subtitle\">\n          Contoso Logistics\n        </a>\n      </h4>\n      <div class=\"base-search-card__metadata\">\n        <span class=\"job-search-card__location\">\n          Austin, Texas Metropolitan Area\n        </span>\n        <time class=\"job-search-card__listdate--new\" datetime=\"2026-11-17\">\n          2 hours ago\n        </time>\n      </div>\n    </div>\n  </div>\n</li>\n"
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "url": "https://www.linkedin.com/jobs-guest/jobs/api/jobPosting/4100000001"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "text/html; charset=utf-8"
+        },
+        "text": "<!DOCTYPE html>\n<section class=\"top-card-layout\">\n  <h2 class=\"top-card-layout__title\">Software Engineer, Perception</h2>\n</section>\n<section class=\"core-section-container description\">\n  <div class=\"description__text description__text--rich\">\n    <section class=\"show-more-less-html\" data-max-lines=\"5\">\n      <div class=\"show-more-less-html__markup show-more-less-html__markup--clamp-after-5 relative overflow-hidden\">\n        <p>Northwind Robotics builds warehouse robots that work next to people.</p><strong>What you will do</strong><ul><li>Design and ship C++ and Python services for sensor fusion</li><li>Review code and mentor two engineers</li></ul>\n      </div>\n      <button class=\"show-more-less-html__button show-more-less-button\">Show more</button>\n    </section>\n  </div>\n  <ul class=\"description__job-criteria-list\">\n    <li class=\"description__job-criteria-item\">\n      <h3 class=\"description__job-criteria-subheader\">\n        Seniority level\n      </h3>\n      <span class=\"description__job-criteria-text description__job-criteria-text--criteria\">\n        Mid-Senior level\n      </span>\n    </li>\n    <li class=\"description__job-criteria-item\">\n      <h3 class=\"description__job-criteria-subheader\">\n        Employment type\n      </h3>\n      <span class=\"description__job-criteria-text description__job-criteria-text--criteria\">\n        Full-time\n      </span>\n    </li>\n  </ul>\n</section>\n"
+      }
+    }
+  ]
+}

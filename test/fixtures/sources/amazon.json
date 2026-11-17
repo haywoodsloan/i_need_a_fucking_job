@@ -1,0 +1,82 @@
+{
+  "source": "amazon",
+  "origin": "handwritten",
+  "date": "2026-11-17",
+  "note": "Handwritten from the fields the adapter reads and the shape the service documents. The company \"Northwind Robotics\" and every posting are made up. It exercises the code, but it cannot notice the live service changing: replace it with a recording (npm run fixtures:record) from a machine that can reach the service.",
+  "search": {
+    "query": {
+      "role": "software engineer",
+      "location": "Austin, TX",
+      "distanceMiles": 25
+    }
+  },
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "url": "https://www.amazon.jobs/en/search.json?base_query=software+engineer&result_limit=100&sort=recent&normalized_city_name%5B%5D=Austin&normalized_state_name%5B%5D=Texas"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "json": {
+          "error": null,
+          "hits": 2,
+          "facets": {},
+          "content": {},
+          "jobs": [
+            {
+              "basic_qualifications": "- 3+ years of non-internship professional software development experience<br/>- Experience programming with at least one software programming language",
+              "business_category": "sample-team",
+              "city": "Austin",
+              "company_name": "Amazon.com Services LLC",
+              "country_code": "USA",
+              "description": "Handwritten sample posting. Build and operate services that customers depend on every day.",
+              "description_short": "Handwritten sample posting.",
+              "id": "0f6d2b8e-4a1c-4e7f-9b3d-5c8a1e2f7d60",
+              "id_icims": "3099001",
+              "job_category": "Software Development",
+              "job_path": "/en/jobs/3099001/software-development-engineer-sample-team",
+              "job_schedule_type": "full-time",
+              "location": "US, TX, Austin",
+              "locations": [
+                "{\"city\":\"Austin\",\"countryIso3a\":\"USA\",\"normalizedCityName\":\"Austin\",\"normalizedCountryCode\":\"USA\",\"normalizedLocation\":\"Austin, Texas, USA\",\"normalizedStateName\":\"Texas\",\"region\":\"TX\",\"type\":\"ONSITE\"}",
+                "{\"city\":\"Seattle\",\"countryIso3a\":\"USA\",\"normalizedCityName\":\"Seattle\",\"normalizedCountryCode\":\"USA\",\"normalizedLocation\":\"Seattle, Washington, USA\",\"normalizedStateName\":\"Washington\",\"region\":\"WA\",\"type\":\"ONSITE\"}"
+              ],
+              "normalized_location": "Austin, Texas, USA",
+              "posted_date": "November 12, 2026",
+              "preferred_qualifications": "- 3+ years of full software development life cycle experience<br/>- Bachelor&#39;s degree in computer science or equivalent",
+              "state": "TX",
+              "title": "Software Development Engineer",
+              "updated_time": "5 days",
+              "url_next_step": "https://account.amazon.jobs/jobs/3099001/apply"
+            },
+            {
+              "basic_qualifications": "- 5+ years of engineering team management experience",
+              "company_name": "Amazon.com Services LLC",
+              "country_code": "USA",
+              "description": "Handwritten sample posting. Lead a team of engineers.",
+              "id": "7b1e9c4a-2d6f-4a8b-b5e0-3f9c7a1d4e82",
+              "id_icims": "3099044",
+              "job_category": "Software Development",
+              "job_path": "/en/jobs/3099044/software-development-manager-sample-team",
+              "job_schedule_type": "full-time",
+              "location": "US, TX, Austin",
+              "locations": [
+                "{\"city\":\"Austin\",\"normalizedLocation\":\"Austin, Texas, USA\",\"normalizedStateName\":\"Texas\",\"region\":\"TX\",\"type\":\"ONSITE\"}"
+              ],
+              "normalized_location": "Austin, Texas, USA",
+              "posted_date": "November  3, 2026",
+              "preferred_qualifications": "",
+              "state": "TX",
+              "title": "Software Development Manager",
+              "updated_time": "14 days"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

@@ -11,3 +11,5 @@ server/*.local.mjs
 server/*.local.ts
 .DS_Store
 worker/.wrangler
+
+coverage

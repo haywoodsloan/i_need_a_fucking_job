@@ -3,14 +3,14 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
-import type { ErrorReply, SessionReply, SessionSummary } from '../src/account/api';
-import { adminToken, clientAddress, readAccountsConfig, startAccounts, type Accounts, type AccountsConfig } from '../server/src/accounts/index';
-import { when } from '../server/src/accounts/admin-commands';
-import type { AccountReply } from '../server/src/accounts/http';
-import { SESSION_IDLE_MS, SESSION_MAX_MS, VAULT_IDLE_MS } from '../server/src/accounts/service';
-import type { KdfParams } from '../server/src/accounts/crypto';
-import { DatabaseInUse, migrate, openDb, readLock, type Db } from '../server/src/db/db';
-import { MIGRATIONS } from '../server/src/db/migrations';
+import type { ErrorReply, SessionReply, SessionSummary } from '../../src/account/api';
+import { adminToken, clientAddress, readAccountsConfig, startAccounts, type Accounts, type AccountsConfig } from '../../server/src/accounts/index';
+import { when } from '../../server/src/accounts/admin-commands';
+import type { AccountReply } from '../../server/src/accounts/http';
+import { SESSION_IDLE_MS, SESSION_MAX_MS, VAULT_IDLE_MS } from '../../server/src/accounts/service';
+import type { KdfParams } from '../../server/src/accounts/crypto';
+import { DatabaseInUse, migrate, openDb, readLock, type Db } from '../../server/src/db/db';
+import { MIGRATIONS } from '../../server/src/db/migrations';
 
 const ORIGIN = 'http://localhost:5173';
 const FAST: KdfParams = { alg: 'argon2id', m: 256, t: 1, p: 1 };
@@ -121,8 +121,8 @@ async function world(env: Record<string, string> = {}, kdf: KdfParams = FAST): P
   return { accounts, config, advance: (ms) => void (clock += ms), breachServiceDown, breachLookups, browser, member, invite, resetLink, vaultKeyOf };
 }
 
-async function runAdmin(accounts: Accounts, command: Parameters<typeof import('../server/src/accounts/admin-commands').runAdminCommand>[2]) {
-  const { runAdminCommand } = await import('../server/src/accounts/admin-commands');
+async function runAdmin(accounts: Accounts, command: Parameters<typeof import('../../server/src/accounts/admin-commands').runAdminCommand>[2]) {
+  const { runAdminCommand } = await import('../../server/src/accounts/admin-commands');
   return runAdminCommand(accounts.service, accounts.config, command);
 }
 
