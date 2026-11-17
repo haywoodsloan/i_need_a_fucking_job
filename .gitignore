@@ -4,6 +4,8 @@ dist
 .env
 .env.*
 !.env.example
+# The local account database (see docs/accounts.md)
+server/.data/
 # Your own fetch tiers (see docs/fetch-tiers.md)
 server/*.local.mjs
 server/*.local.ts

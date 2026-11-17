@@ -5,6 +5,7 @@ WORKDIR /app
 COPY server/package.json server/package-lock.json* server/
 RUN cd server && npm install --omit=dev
 COPY src/jobs src/jobs
+COPY src/account src/account
 COPY server/src server/src
 WORKDIR /app/server
 ENV NODE_ENV=production PORT=8787

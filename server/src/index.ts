@@ -4,6 +4,7 @@
  *   GET  /api/health           which sources this server can run
  *   POST /api/search           { query: JobQuery, settings: SearchSettings } → SearchResponse
  *   GET  /api/job?id=<job id>  full description for snippet-only results
+ *   /api/auth, /api/account    sign-in and accounts, when this server is set up for them (see docs/accounts.md)
  *
  * Secrets live only in this process's environment (see server/.env.example).
  * Nothing about the user's resume is ever sent here.
@@ -32,6 +33,23 @@ const discover = makeDiscover(ctx.fetch);
 
 const cache = new Map<string, { at: number; body: string }>();
 const hits = new Map<string, number[]>();
+
+// Accounts are off until `npm run admin -- setup` has given this server its password secret. Until then none of
+// their code or packages is loaded, so the search server runs exactly as it did before accounts existed.
+const accounts = env.AUTH_PEPPER ? await startAccounts() : undefined;
+
+async function startAccounts() {
+  try {
+    const { readAccountsConfig, startAccounts } = await import('./accounts/index');
+    return await startAccounts(readAccountsConfig(env)!);
+  } catch (e) {
+    const name = (e as Error).name;
+    if ((e as NodeJS.ErrnoException).code === 'ERR_MODULE_NOT_FOUND') console.error('Accounts need packages that are not installed yet. Run "npm install" in server/ and start again.');
+    else if (name === 'DatabaseInUse') console.error(`${(e as Error).message} Stop it first. If nothing of this app is running, delete the file server/.data/pg.lock and start again.`);
+    else console.error(name === 'ConfigError' ? (e as Error).message : e);
+    process.exit(1);
+  }
+}
 
 function cors(req: IncomingMessage, res: ServerResponse) {
   const origin = req.headers.origin;
@@ -82,9 +100,22 @@ function validSettings(s: unknown): s is SearchSettings {
 }
 
 const server = createServer(async (req, res) => {
+  let url: URL;
+  try {
+    url = new URL(req.url ?? '/', 'http://x');
+  } catch {
+    return send(res, 400, { error: 'Bad request' });
+  }
+  // Account routes come first: they are for the app's own pages and must not get the CORS headers below.
+  if (accounts?.owns(url.pathname)) {
+    return accounts.handle(req, res, url).catch((e) => {
+      console.error(e);
+      if (!res.headersSent) send(res, 500, { error: 'Something went wrong on the server.' });
+    });
+  }
+  if (url.pathname === '/api/auth/session') return send(res, 200, { available: false, user: null });
   cors(req, res);
   if (req.method === 'OPTIONS') return res.writeHead(204).end();
-  const url = new URL(req.url ?? '/', 'http://x');
   try {
     if (url.pathname === '/api/health') {
       return send(res, 200, {
@@ -97,6 +128,7 @@ const server = createServer(async (req, res) => {
         },
         tiers: fetcher.tiers,
         fetch: fetcher.stats(),
+        accounts: !!accounts,
       });
     }
     if (url.pathname === '/api/search' && req.method === 'POST') {
@@ -126,6 +158,7 @@ const server = createServer(async (req, res) => {
 
 server.listen(PORT, () => {
   console.log(`job search backend on :${PORT} (fetch tiers: ${fetcher.tiers.join(' → ')})`);
+  console.log(accounts ? `accounts: on, for the app at ${accounts.config.origins.join(' or ')}` : 'accounts: off (turn them on with: npm run admin -- setup <your email>)');
   if (!ORIGINS.length) console.warn('ALLOWED_ORIGINS is not set: accepting requests from any origin');
 });
 
@@ -133,6 +166,7 @@ for (const sig of ['SIGINT', 'SIGTERM']) {
   process.on(sig, async () => {
     await closeBrowser().catch(() => {});
     await pipeline.close();
+    await accounts?.close().catch(() => {});
     process.exit(0);
   });
 }
