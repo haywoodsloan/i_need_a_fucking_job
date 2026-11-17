@@ -1,6 +1,7 @@
 # Accounts, site logins and application tracking: design plan
 
-**Status:** proposal. Nothing in this document is built yet. Written 2026-11-16.
+**Status:** proposal. Nothing in this document is built yet. Written 2026-11-16. Decision 1 was made the same day.
+Decisions 2 to 7 are still open ([2](#2-decisions-for-sloan)).
 
 This is the plan for the phase after job search and the resume analyzer: user accounts, safe storage of each user's
 logins for job boards and hiring systems, tracking applications, submitting them from inside the app, where Claude
@@ -10,7 +11,8 @@ It keeps the two rules the project already has:
 
 - **Your words, verbatim.** Applications are filled only from verified resume fields and answers the user typed.
 - **No bot-check bypass.** When a site wants a login, a code or a CAPTCHA, the user does it. The app never solves or
-  dodges one. This is the same rule `server/src/fetcher.ts` already follows for search.
+  dodges one. This is the same rule the fetch tiers in this repository already follow for search
+  ([fetch-tiers.md](fetch-tiers.md)).
 
 Contents: [1 What was asked](#1-what-was-asked-and-where-the-plan-answers-it) ·
 [2 Decisions](#2-decisions-for-sloan) · [3 Starting point](#3-starting-point) · [4 Accounts](#4-accounts-and-sign-in) ·
@@ -32,11 +34,12 @@ Contents: [1 What was asked](#1-what-was-asked-and-where-the-plan-answers-it) ·
 
 ## 2. Decisions for Sloan
 
-Each one has a recommended default, and the rest of this plan assumes the defaults.
+Decision 1 is made. Decisions 2 to 7 are open: each has a recommended default, and the rest of this plan assumes
+those defaults.
 
 | # | Decision | Recommended | If you choose otherwise |
 | --- | --- | --- | --- |
-| 1 | Should the first version log in to LinkedIn, Indeed, Glassdoor and ZipRecruiter from our server? | **Not yet.** Apply in-app through the employer's own system (Greenhouse, Lever, Ashby, Workday) whenever a posting has one. Track big-board applications by one click or import, each with a link to the board. | Building those connectors early means frequent verification prompts and a real chance of account restrictions, because those sites prohibit automated access. A browser extension is the other route ([6.5](#65-why-the-big-boards-wait)). |
+| 1 | Should the first version log in to LinkedIn and Indeed from our server? (Glassdoor, ZipRecruiter and Dice wait in any case.) | **Decided 2026-11-16: not yet.** Apply in-app through the employer's own system (Greenhouse, Lever, Ashby, Workday) whenever a posting has one. Track LinkedIn and Indeed applications by one click or import, each with a link to the site. | The routes not taken, if this is reopened: an opt-in experimental connector behind a risk warning, or a browser extension ([6.5](#65-why-the-big-boards-wait)). Both sites prohibit automated access, so either route risks verification prompts and restricted accounts. |
 | 2 | Who presses the final Submit? | **The user**, on the real form, after reviewing it in the app. | Automatic submit can be allowed per site later, once that site's connector has a clean record. |
 | 3 | Where does it run, and do we buy a domain? | **Yes to a domain** (about $10 to $15 a year), because sign-in cookies need the app and the API on one site. Laptop first, Azure credits for a staging copy, then choose the friends-facing host. | Staying on `github.io` plus a separate API host means weaker sign-in security and breaks in Safari ([11](#11-hosting)). |
 | 4 | Is it acceptable that a forgotten password loses the stored site logins? | **Yes.** It is the price of logins that we cannot read. A recovery code given at sign-up avoids the loss, and tracker data survives either way. | Making logins recoverable by us means the server can open the vault without the user, which removes the guarantee asked for. |
@@ -49,8 +52,9 @@ Each one has a recommended default, and the rest of this plan assumes the defaul
 What exists today, from the code:
 
 - A static React app on GitHub Pages. The resume is parsed and stored only in the browser (`src/lib/storage.ts`).
-- `server/` is a stateless search proxy: no users, no database, no cookies. All outbound requests go through
-  `server/src/fetcher.ts`, which reports a bot check as `blocked` and never works around it.
+- `server/` is a stateless search proxy: no users, no database, no cookies. All outbound requests go through the
+  tier pipeline in `server/src/fetcher.ts` (cache, plain HTTP, an optional headless browser). Its built-in tiers
+  report a bot check as `blocked` and never work around one.
 - `toApplicationProfile(resume)` in `src/resume/model.ts` returns only verified fields and throws if any value
   differs from its source. It is already the single gate for anything that fills an application.
 - Each posting carries the board link and an apply link (`JobListing.url`, `applyUrl` in `src/jobs/types.ts`), and
@@ -238,7 +242,7 @@ interface SiteConnector {
 
 ### 6.2 How a connector reaches a site, cheapest first
 
-This follows the tiered idea already used for search.
+This follows the tiered idea already used for search ([fetch-tiers.md](fetch-tiers.md)).
 
 1. **Public API, no login.** For example Greenhouse's public Job Board API returns a posting's application
    questions with no key, and tells us whether a posting is still open.
@@ -254,6 +258,10 @@ logged-in connectors use a normal browser with no detection-hiding flags, no fin
 rotation. (The Indeed search route in `server/src/indeed.ts` sets a flag that hides automation. Connectors must not
 inherit it.)
 
+Anything sent with a user's login stays out of the search fetch pipeline in `server/src/fetcher.ts`. That pipeline's
+cache is shared by all users (its key is the request, not who asked), and its plug-in tiers (`FETCH_TIERS_MODULE`)
+are handed every request's headers. Public, signed-out reads such as Greenhouse's question list can keep using it.
+
 ### 6.3 The live view
 
 This is how the user stays inside the app while a real site needs them.
@@ -264,7 +272,8 @@ This is how the user stays inside the app while a real site needs them.
 - Keystrokes pass through our server to reach the remote browser, so the live view has the same trust level as the
   vault.
 - On the laptop ("local mode") the live view is simply a visible browser window. That is the first version to
-  build, because that is where connectors can be tested against real sites.
+  build, because that is where connectors can be tested against real sites. It can open the Edge or Chrome already
+  installed, through the `BROWSER_CHANNEL` setting the search browser tier uses, so nothing new is installed.
 - The stream is built on Chromium's own screencast feature and stays on our server. Hosted browser services exist,
   but they would put another company in the middle of users' logins.
 - A video stream is not usable with a screen reader. The hand-off link is the accessible path.
@@ -280,8 +289,8 @@ This is how the user stays inside the app while a real site needs them.
 | Ashby | None * | Assisted fill | No applicant portal *. The user sets it. | Low | Phase 2 |
 | Workday | One account per employer, email and password * | Assisted fill of the multi-step form | The employer's candidate home lists each application * | Medium | Phase 3 |
 | SmartRecruiters, iCIMS, Taleo, SuccessFactors, Dayforce | Mostly one account per employer * | Later, by demand | Later | Medium | Later |
-| LinkedIn | Password plus frequent verification * | Not in the first version | Import or one click | High | Decision 1 |
-| Indeed | Emailed code or Google sign-in * | Not in the first version | One click | High | Decision 1 |
+| LinkedIn | Password plus frequent verification * | Not in the first version | Import or one click | High | Later (decision 1) |
+| Indeed | Emailed code or Google sign-in * | Not in the first version | One click | High | Later (decision 1) |
 | Glassdoor, ZipRecruiter, Dice | Varies * | No | One click | High | Later |
 | USAJOBS | login.gov with two-factor * | Never automated | One click and link | Not applicable | Phase 1 |
 
@@ -295,6 +304,8 @@ does not let a candidate edit or withdraw a submitted application.
 
 ### 6.5 Why the big boards wait
 
+Decision 1 settled this for the first version: no LinkedIn or Indeed logins from our server. The reasons:
+
 - LinkedIn's User Agreement prohibits bots and automated access, and it publishes a list of prohibited software and
   extensions. Indeed and the others have similar terms. Storing a user's password for them is itself against those
   terms.
@@ -304,7 +315,7 @@ does not let a candidate edit or withdraw a submitted application.
   the in-app path is "apply through the employer's system". The gap is postings that can only be applied to on the
   board itself, such as LinkedIn Easy Apply.
 
-If decision 1 changes later, there are two routes: an opt-in experimental connector with an explicit risk screen, or
+If decision 1 is reopened later, there are two routes: an opt-in experimental connector with an explicit risk screen, or
 a companion browser extension that works inside the user's own signed-in browser. The extension needs no stored
 login and sees far fewer challenges, but it means an install, desktop only, and LinkedIn also acts against
 extensions it detects.
@@ -634,7 +645,7 @@ standing of users' accounts on other sites, and the server's own keys.
 | 8 | The service used to test stolen logins or spam employers | Invite-only, users sign in to sites themselves in the live view, per-user limits, user-pressed Submit. | Low at this size. |
 | 9 | Requests steered at internal addresses through pasted links or browser navigation | Each connector may only reach its listed hosts. Private address ranges are refused. | Low. |
 | 10 | A hostile page attacks the server's browser | Chromium's sandbox stays on, non-root, one browser process per user job, kept patched, no downloads. | A browser zero-day. |
-| 11 | One user's data reaches another through a bug | A separate browser context per job, user-scoped queries plus row-level security, and encrypted items bound to their owner so the wrong key fails. | Low. |
+| 11 | One user's data reaches another through a bug | A separate browser context per job, user-scoped queries plus row-level security, encrypted items bound to their owner so the wrong key fails, and nothing sent with a login passes through the shared search cache. | Low. |
 | 12 | Secrets leak into logs, traces or screenshots | No bodies in logs, no browser traces or video in production, no screenshots on sign-in pages, confirmations stored encrypted. | Human error in new code. Reviewed per connector. |
 | 13 | A wrong, duplicate or unapproved application is sent | Verified fields only, review screen, the user's own Submit, one in-flight application per posting, the `unknown` state after an interruption. | A user approving something they did not read. |
 | 14 | A site flags or restricts the user's account | Risk shown per site, user-started actions only, slow pace, no disguise, sessions reused, a switch to turn any connector off at once, big boards deferred. | Cannot be removed for any automation. This is why decision 1 exists. |
@@ -675,7 +686,7 @@ Each step ends with something usable.
 | 3 | Workday: connect or create an account with the user present, stored passwords, status sync on open | A real Workday application's status shows in the tracker |
 | 4 | Hosted for friends: domain, deployment, streamed live view, invites, recovery codes, backups, the notice | A friend signs up from an invite and connects a site |
 | A | In parallel after step 0: Claude resume breakdown and review, board discovery, the usage meter | A two-column resume that the rules parser scrambles comes out right, and the meter shows what it cost |
-| Later | Decision 1 again, email signals, passkeys, more hiring systems | |
+| Later | Revisiting decision 1 (LinkedIn and Indeed logins), email signals, passkeys, more hiring systems | |
 
 Live sites can only be reached from the laptop, not from the cloud build environment, so every connector is finished
 and smoke-tested there.
