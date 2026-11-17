@@ -35,7 +35,12 @@ beforeAll(async () => {
   writeFileSync(join(dir, '.secret'), 'hidden file');
   writeFileSync(join(dir, 'notes.exe'), 'unknown kind of file');
   writeFileSync(join(root, 'outside.txt'), 'a file next to the folder');
-  symlinkSync(join(root, 'outside.txt'), join(dir, 'link.txt'));
+  try {
+    symlinkSync(join(root, 'outside.txt'), join(dir, 'link.txt'));
+  } catch {
+    // Windows only lets administrators and Developer Mode create links. Without one, "/link.txt" below is simply a
+    // file that is not there, and the rest of the checks still run.
+  }
 
   const app = loadApp(dir, { accounts: true });
   // The same order as the real server: parse the address, let the app answer, otherwise 404.
@@ -48,7 +53,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await new Promise((resolve) => server.close(resolve));
-  rmSync(root, { recursive: true, force: true });
+  rmSync(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 });
 
 describe('serving the built app', () => {

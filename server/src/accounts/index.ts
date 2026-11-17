@@ -5,6 +5,7 @@
  * one. With accounts off, none of this code or its dependencies is loaded, and the search server runs as before.
  */
 import type { IncomingMessage, ServerResponse } from 'node:http';
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { FetchLike } from '../../../src/jobs/types';
 import { MIGRATIONS } from '../db/migrations';
@@ -90,7 +91,7 @@ export function readAccountsConfig(env: Env): AccountsConfig | undefined {
   };
 }
 
-export const databaseDir = (config: AccountsConfig) => `${config.dataDir}/pg`;
+export const databaseDir = (config: AccountsConfig) => join(config.dataDir, 'pg');
 
 /**
  * The address attempts are counted against. Behind proxies it is read from X-Forwarded-For, where each proxy adds

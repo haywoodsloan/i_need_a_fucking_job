@@ -1136,7 +1136,8 @@ describe('the database folder', () => {
       expect(await again.query('select * from kept')).toEqual([]);
       await again.close();
     } finally {
-      rmSync(join(dir, '..'), { recursive: true, force: true });
+      // Windows can take a moment to let go of files that were just closed.
+      rmSync(join(dir, '..'), { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
     }
   });
 });
