@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { APP_NAME } from '../App';
 import { DEFAULT_SETTINGS, fetchJobDetail, searchJobs, type ClientSettings } from '../jobs/client';
-import type { JobPosting, JobQuery, SearchResponse, Workplace } from '../jobs/types';
+import type { JobPosting, JobQuery, SearchResponse, SourceStatus, Workplace } from '../jobs/types';
 import type { ParsedResume } from '../resume/model';
+import { Chevron, MultiSelect, count, useDismiss } from './controls';
 import { useStored } from './hooks';
 import { sanitizeHtml, termsRegex, textToHtml } from './sanitize';
 import { SettingsPanel } from './SettingsPanel';
@@ -75,7 +76,7 @@ export function SearchPage({ resume }: { resume: ParsedResume | null }) {
     <main className="results-page">
       <div className="results-head">
         {bar}
-        {result && <SourceStrip result={result} />}
+        {result && <SourceReport sources={result.sources} />}
       </div>
       {error && <div className="empty">Search failed: {error}</div>}
       {loading && !result && <div className="empty">Searching…</div>}
@@ -91,12 +92,6 @@ function SearchBox(props: { query: JobQuery; setQuery: (q: JobQuery) => void; on
   const { query, setQuery, onSubmit, loading } = props;
   const expanded = query.role.length > 0;
   const remoteOnly = query.workplace?.length === 1 && query.workplace[0] === 'remote';
-  const toggleWp = (w: Workplace) => {
-    const cur = new Set(query.workplace ?? []);
-    if (cur.has(w)) cur.delete(w);
-    else cur.add(w);
-    setQuery({ ...query, workplace: [...cur] });
-  };
   return (
     <form
       className={`search-box${expanded ? ' expanded' : ''}`}
@@ -122,49 +117,50 @@ function SearchBox(props: { query: JobQuery; setQuery: (q: JobQuery) => void; on
         )}
       </div>
       {expanded && (
-        <div className="search-extra">
-          <label>
-            Location
+        <div className="search-filters">
+          <label className="filter">
+            <span className="filter-label">Location</span>
             <input
+              className="control"
               placeholder={remoteOnly ? 'Anywhere' : 'City, state or ZIP'}
               value={query.location ?? ''}
               disabled={remoteOnly}
               onChange={(e) => setQuery({ ...query, location: e.target.value })}
             />
           </label>
-          <label>
-            Within
-            <select
-              value={query.distanceMiles ?? 25}
-              disabled={remoteOnly || !query.location}
-              onChange={(e) => setQuery({ ...query, distanceMiles: +e.target.value })}
-            >
-              {DISTANCES.map((d) => (
-                <option key={d} value={d}>
-                  {d} mi
-                </option>
-              ))}
-            </select>
+          <label className="filter">
+            <span className="filter-label">Within</span>
+            <span className="select">
+              <select
+                className="control"
+                value={query.distanceMiles ?? 25}
+                disabled={remoteOnly || !query.location}
+                onChange={(e) => setQuery({ ...query, distanceMiles: +e.target.value })}
+              >
+                {DISTANCES.map((d) => (
+                  <option key={d} value={d}>
+                    {d} mi
+                  </option>
+                ))}
+              </select>
+            </span>
           </label>
-          <div className="seg" role="group" aria-label="Workplace">
-            {WORKPLACES.map(([w, label]) => (
-              <button type="button" key={w} aria-pressed={!!query.workplace?.includes(w)} onClick={() => toggleWp(w)}>
-                {label}
-              </button>
-            ))}
-          </div>
-          <label>
-            <span className="sr-only">Posted</span>
-            <select
-              value={query.postedWithinDays ?? ''}
-              onChange={(e) => setQuery({ ...query, postedWithinDays: e.target.value ? +e.target.value : undefined })}
-            >
-              {POSTED.map(([v, label]) => (
-                <option key={label} value={v ?? ''}>
-                  {label}
-                </option>
-              ))}
-            </select>
+          <MultiSelect label="Workplace" empty="Any" choices={WORKPLACES} chosen={query.workplace ?? []} onChange={(workplace) => setQuery({ ...query, workplace })} />
+          <label className="filter">
+            <span className="filter-label">Posted</span>
+            <span className="select">
+              <select
+                className="control"
+                value={query.postedWithinDays ?? ''}
+                onChange={(e) => setQuery({ ...query, postedWithinDays: e.target.value ? +e.target.value : undefined })}
+              >
+                {POSTED.map(([v, label]) => (
+                  <option key={label} value={v ?? ''}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </span>
           </label>
         </div>
       )}
@@ -172,19 +168,103 @@ function SearchBox(props: { query: JobQuery; setQuery: (q: JobQuery) => void; on
   );
 }
 
-function SourceStrip({ result }: { result: SearchResponse }) {
+type Outcome = 'failed' | 'blocked' | 'off' | 'answered';
+
+/** How a source did. A bot check is its own outcome: the site turned the search away, and nothing here is broken. */
+const outcomeOf = (s: SourceStatus): Outcome => (s.ok ? 'answered' : s.blocked ? 'blocked' : s.error ? 'failed' : 'off');
+
+/** The outcomes that mean a source found nothing, in the order they are shown: what needs a look comes first. */
+const TROUBLE: [Outcome, string][] = [
+  ['failed', 'Failed'],
+  ['blocked', 'Blocked'],
+  ['off', 'Off'],
+];
+
+/**
+ * How the sources did, in one line. Pressing the line opens a table over the results with one row per source: how
+ * many jobs it found, or why it found none.
+ */
+function SourceReport({ sources }: { sources: SourceStatus[] }) {
+  const [open, setOpen] = useState(false);
+  const root = useRef<HTMLElement>(null);
+  const button = useRef<HTMLButtonElement>(null);
+  const id = useId();
+  useDismiss(root, open, (by) => {
+    setOpen(false);
+    if (by === 'escape') button.current?.focus();
+  });
+
+  const of = (outcome: Outcome) => sources.filter((s) => outcomeOf(s) === outcome);
+  const answered = of('answered');
+  const trouble = TROUBLE.map(([outcome, word]) => ({ outcome, word, sources: of(outcome) }))
+    .filter((t) => t.sources.length > 0)
+    .map((t) => ({ ...t, said: `${t.sources.length} ${t.word.toLowerCase()}` }));
+  const summary =
+    answered.length < sources.length
+      ? `${answered.length} of ${count(sources.length, 'source')} answered`
+      : sources.length === 1
+        ? '1 source answered'
+        : `All ${sources.length} sources answered`;
+
+  if (!sources.length) {
+    return (
+      <section className="sources" aria-label="Sources searched">
+        <span className="sources-line">No sources were searched. Choose where to search with the gear.</span>
+      </section>
+    );
+  }
   return (
-    <div className="source-strip" aria-label="Sources searched">
-      {result.sources.map((s) => (
-        <span
-          key={s.sourceId}
-          className={`source-pill ${s.ok ? 'ok' : s.error ? 'err' : ''}`}
-          title={s.error ?? s.skipped ?? `${s.count} jobs in ${s.ms} ms`}
-        >
-          {s.label}: {s.ok ? s.count : s.blocked ? 'blocked' : s.error ? 'error' : 'off'}
-        </span>
-      ))}
-    </div>
+    <section className="sources" aria-label="Sources searched" ref={root}>
+      <button
+        type="button"
+        ref={button}
+        className="sources-line"
+        // The counts have a dot between them on the page. Read aloud, they have a comma.
+        aria-label={[summary, ...trouble.map((t) => t.said)].join(', ')}
+        aria-expanded={open}
+        aria-controls={open ? id : undefined}
+        onClick={() => setOpen(!open)}
+      >
+        <Chevron />
+        <span>{summary}</span>
+        {trouble.map((t) => (
+          <Fragment key={t.outcome}>
+            {' '}
+            <span>·</span> <span className={t.outcome}>{t.said}</span>
+          </Fragment>
+        ))}
+      </button>
+      {open && (
+        <div className="sources-table" id={id}>
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Source</th>
+                <th scope="col">Result</th>
+              </tr>
+            </thead>
+            <tbody>
+              {trouble.flatMap((t) =>
+                t.sources.map((s) => (
+                  <tr key={s.sourceId} className={t.outcome}>
+                    <th scope="row">{s.label}</th>
+                    <td>
+                      <strong>{t.word}</strong> {(s.error ?? s.skipped) && <span className="why">{s.error ?? s.skipped}</span>}
+                    </td>
+                  </tr>
+                )),
+              )}
+              {answered.map((s) => (
+                <tr key={s.sourceId}>
+                  <th scope="row">{s.label}</th>
+                  <td title={`Answered in ${s.ms} ms`}>{count(s.count, 'job')}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </section>
   );
 }
 
@@ -213,8 +293,8 @@ function Results(props: {
   }
   return (
     <div className="results-body">
-      <div className="job-list" role="listbox" aria-label={`${result.jobs.length} jobs`}>
-        <div className="small muted">{result.jobs.length} jobs</div>
+      <div className="job-list" role="listbox" aria-label={count(result.jobs.length, 'job')}>
+        <div className="small muted">{count(result.jobs.length, 'job')}</div>
         {result.jobs.map((j) => (
           <button key={j.id} className="job-card" role="option" aria-selected={j.id === selected} onClick={() => setSelected(j.id)}>
             {j.companyLogo ? <img className="logo" src={j.companyLogo} alt="" loading="lazy" /> : <span className="logo">{j.company[0]}</span>}

@@ -27,7 +27,7 @@ Glassdoor and ZipRecruiter are reachable only through route 1 today.
 
 Google has no public API for its job listings. Services sell access to them, and three are supported
 (`src/jobs/adapters/googleJobs.ts`). The server uses the first one in this table whose setting is filled in, and
-only that one. Why that order: [decisions/0018](decisions/0018-jsearch-is-read-from-its-maker-first.md).
+only that one. Why that order: [decisions/0019](decisions/0019-jsearch-is-read-from-its-maker-first.md).
 
 | Setting in `server/.env` | Service | Free each month | Get a key at |
 | --- | --- | --- | --- |
@@ -57,9 +57,9 @@ These are the service's own steps, read on 2026-11-24. Sloan got a key from it t
    ```
 
 6. Stop the server and start it again (`npm run local`). It reads `server/.env` only when it starts.
-7. See that the server found the key, which costs nothing: open the settings (the gear) in the app. Under "Search
-   server", the line that starts with "Connected." should name "Google for Jobs (JSearch, OpenWeb Ninja)". If it
-   says "no key set", the line in `server/.env` is not being read.
+7. See that the server found the key, which costs nothing: open the settings (the gear) in the app, then the
+   section "Search server". The line that starts with "Connected." should name "Google for Jobs (JSearch, OpenWeb
+   Ninja)". If it says "no key set", the line in `server/.env` is not being read.
 8. Check that the service accepts it: `npm run smoke --prefix server`. The row "Google for Jobs (JSearch, OpenWeb
    Ninja)" should say PASS. A search in the app shows the same thing.
 
@@ -86,8 +86,9 @@ SerpAPI counts searches, and every page is one search, so the same setting and t
 
 ### When Google for Jobs does not answer
 
-The results list names each source that failed and repeats what the service said. A failed service is not swapped
-for the next one in the table: that would quietly spend another allowance.
+The line above the results says how many sources answered and how many failed. Pressing it opens a table that
+names each source that failed and repeats what the service said. A failed service is not swapped for the next of
+the three: that would quietly spend another allowance.
 
 | The message | What it means | What to do |
 | --- | --- | --- |

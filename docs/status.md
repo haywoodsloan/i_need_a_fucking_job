@@ -79,10 +79,6 @@ asking, with a test first. Take one out of this list in the commit that fixes it
   fast. Those searches also go out side by side, which a plan with a limit per second may refuse.
 - `htmlToText` leaves an empty line between the items of a list (`src/jobs/adapters/common.ts`).
 
-**Pages** (`src/ui/`)
-
-- The results list says "1 jobs" for a single job (`src/ui/SearchPage.tsx`).
-
 **Resume** (`src/resume/`)
 
 - `parsePartialDate` reads any word that starts like a month as that month ("Marketing 2020" as March). The

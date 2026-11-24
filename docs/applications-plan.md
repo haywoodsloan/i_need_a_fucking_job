@@ -378,7 +378,7 @@ Routes 2 to 4 need no stored login at all, so the tracker is useful from Phase 1
 
 - A check runs when the user opens the tracker and the last check is older than a few hours, or when they press
   Refresh. Each site has a minimum gap between checks.
-- Progress shows per site, like the source strip on the search page. Every application shows "Checked 3 h ago".
+- Progress shows per site, like the table of sources on the search page. Every application shows "Checked 3 h ago".
 - If the vault is locked the tracker shows what it last knew, with "Unlock to refresh".
 - If a site wants the user to sign in again, the row says "Needs sign-in" with a Reconnect button.
 - There is no scheduler, no queue and no push. Nothing runs for a user who is not there.

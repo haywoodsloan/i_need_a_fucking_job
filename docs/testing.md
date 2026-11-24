@@ -221,7 +221,8 @@ headers, a real database on disk and the real sign-in cookie. Only the job sites
 cut off from every address but the app's. It covers what nothing else can:
 
 1. The security policy is sent, is enforced, and the app runs under it with nothing refused.
-2. A search goes through the server and shows a posting.
+2. A search goes through the server and shows a posting. On the way it sets a filter and opens the table of
+   sources, which a browser refuses to do when the stylesheet lays one control over another.
 3. An invite link becomes a signed-in account that survives a reload, signs out, and signs in again.
 4. A PDF resume is read by the real PDF reader, its page is drawn, and the review survives a reload.
 5. A Word resume is read by the real Word reader.

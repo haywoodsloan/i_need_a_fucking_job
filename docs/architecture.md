@@ -94,6 +94,7 @@ More in [resume-model.md](resume-model.md).
 | `src/account/client.ts`, `AccountProvider.tsx` | Calls to those routes, and who is signed in, for the whole app. |
 | `src/App.tsx` | The top bar and which page shows. Addresses are after the `#`: `#/`, `#/resume`, `#/sign-in`, `#/invite/<code>`, `#/reset/<code>`, `#/recover`, `#/account`. |
 | `src/ui/SearchPage.tsx`, `SettingsPanel.tsx` | Search, results, a posting, and the settings behind the gear. |
+| `src/ui/controls.tsx` | The controls those two share: a field with a list to tick, a section that folds away. Search options are built from these and never as pills ([0018](decisions/0018-search-options-are-fields-and-lists-not-pills.md)). |
 | `src/ui/ResumePage.tsx` | Adding a resume and reviewing its fields against the original. |
 | `src/ui/SignInPages.tsx`, `AccountPage.tsx`, `AccountForms.tsx` | The account pages. |
 | `src/ui/sanitize.ts` | The barrier between a job site's HTML and the page. |
@@ -133,8 +134,8 @@ Tests for code in `src/` sit next to that code. [testing.md](testing.md) has the
    request, then the optional tiers. A source that is turned away as automated traffic is reported as blocked.
 5. `mergeJobs` folds postings with the same company, title and city into one that lists every board, and sorts
    newest first.
-6. The page shows the list and one status per source. Descriptions go through `sanitizeHtml` before they are
-   shown.
+6. The page shows the list, and one line that says how the sources did. The line opens to a table with a row for
+   each source. Descriptions go through `sanitizeHtml` before they are shown.
 
 Without a server, step 2 is skipped and `aggregate` runs in the browser with the browser's own `fetch`.
 
@@ -179,7 +180,7 @@ command opens the database itself.
 
 | Where | What |
 | --- | --- |
-| Browser, `localStorage` | `resume:v1` (the fields of the resume and its text), `search-settings:v1`, `last-query:v1` |
+| Browser, `localStorage` | `resume:v1` (the fields of the resume and its text), `search-settings:v1`, `last-query:v1`, `settings-open:v1` (which sections of the settings are unfolded) |
 | Browser, IndexedDB `job-hunt` | The original resume file, under its SHA-256 |
 | Browser, cookie | `session` (named `__Host-session` on HTTPS): a random token. Not readable by scripts. |
 | `server/.env` | Settings, API keys, and `AUTH_PEPPER`. Gitignored. |
