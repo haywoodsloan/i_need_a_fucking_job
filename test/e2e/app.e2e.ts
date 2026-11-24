@@ -156,17 +156,31 @@ describe('the built app in a browser', () => {
     await page.getByRole('checkbox', { name: /^Remote job boards/ }).check();
     await page.getByRole('button', { name: 'Close settings' }).click();
     await page.getByRole('textbox', { name: 'Role' }).fill('software engineer');
-    await page.keyboard.press('Enter');
+    // The filters are laid out by the real stylesheet here, so this is where a field that lies over another one,
+    // or a list that opens out of reach, is caught: the browser refuses to press what a person could not.
+    await page.getByRole('button', { name: /^Workplace/ }).click();
+    await page.getByRole('checkbox', { name: 'Remote', exact: true }).check();
+    await page.keyboard.press('Escape');
+    expect(await page.getByRole('button', { name: /^Workplace/ }).textContent()).toBe('Remote');
+    expect(await page.getByRole('textbox', { name: 'Location' }).isDisabled()).toBe(true);
+    await page.getByRole('button', { name: 'Search', exact: true }).click();
 
     const list = page.getByRole('listbox');
     await shown(list.getByRole('option').first());
-    // Both remote job boards were asked, through the server, and answered.
+    // Both remote job boards were asked, through the server, and answered. The line under the search box opens to
+    // a table that says how many jobs each one found.
     expect(network.calls.map((c) => new URL(c.url).hostname).sort()).toEqual(['remoteok.com', 'remotive.com']);
-    const sources = page.getByLabel('Sources searched');
-    expect(await sources.textContent()).toMatch(/Remotive/);
-    expect(await sources.textContent()).toMatch(/Remote OK/);
+    const sources = page.getByRole('region', { name: 'Sources searched' });
+    await sources.getByRole('button').click();
+    for (const board of ['Remotive', 'Remote OK']) {
+      const row = sources.getByRole('row').filter({ has: page.getByRole('rowheader', { name: board, exact: true }) });
+      await shown(row);
+      expect(await row.getByRole('cell').textContent()).toMatch(/^\d+ jobs?$/);
+    }
+    await page.keyboard.press('Escape');
+    await sources.getByRole('table').waitFor({ state: 'detached' });
     const count = await list.getByRole('option').count();
-    expect(await list.getAttribute('aria-label')).toBe(`${count} jobs`);
+    expect(await list.getAttribute('aria-label')).toBe(count === 1 ? '1 job' : `${count} jobs`);
 
     const card = list.getByRole('option').first();
     const title = (await card.locator('.title').textContent()) ?? '';

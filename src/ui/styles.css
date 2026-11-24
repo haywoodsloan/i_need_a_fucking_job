@@ -119,7 +119,6 @@ h1, h2, h3 { line-height: 1.2; margin: 0; }
   border: 1px solid var(--border); background: var(--surface); font-size: 13px; cursor: pointer;
 }
 .chip[aria-pressed='true'] { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
-.chip .x { border: 0; background: none; cursor: pointer; padding: 0; color: var(--muted); }
 
 /* ----------------------------------------------------------------- search */
 .search-home {
@@ -138,28 +137,79 @@ h1, h2, h3 { line-height: 1.2; margin: 0; }
 .search-main input {
   flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; font-size: 16px; height: 100%;
 }
-.search-extra {
-  display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
-  padding: 10px 14px 12px; border-top: 1px solid var(--border);
+.search-filters {
+  display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 0.8fr) minmax(0, 1.2fr) minmax(0, 1fr); gap: 10px 12px;
+  padding: 12px 16px 14px; border-top: 1px solid var(--border);
   animation: reveal 0.15s ease-out;
 }
 @keyframes reveal { from { opacity: 0; transform: translateY(-4px); } }
-.search-extra label { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); }
-.search-extra input, .search-extra select {
-  border: 1px solid var(--border); border-radius: 8px; background: var(--surface-2); padding: 5px 8px; font-size: 14px;
+@media (max-width: 640px) {
+  .search-filters { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
 }
-.search-extra input { width: 170px; }
-.search-extra .seg { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
-.search-extra .seg button { border: 0; background: var(--surface-2); padding: 5px 10px; font-size: 13px; cursor: pointer; }
-.search-extra .seg button + button { border-left: 1px solid var(--border); }
-.search-extra .seg button[aria-pressed='true'] { background: var(--accent-soft); color: var(--accent); }
+
+/* ----------------------------------------------------------------- fields */
+/* A label over a control. Every search option is one of these or a list of checkboxes, so they all look alike. */
+.filter { position: relative; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.filter-label { font-size: 12px; font-weight: 500; color: var(--muted); }
+.control {
+  display: block; width: 100%; height: 36px; padding: 0 10px; border: 1px solid var(--border); border-radius: 8px;
+  background: var(--surface-2); font-size: 14px; text-align: left;
+}
+.control:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.control:disabled { opacity: 0.55; }
+.control::placeholder { color: var(--muted); }
+select.control, .control.dropdown { appearance: none; padding-right: 30px; }
+select.control:enabled, .control.dropdown { cursor: pointer; }
+.control.dropdown { position: relative; }
+.control.dropdown > span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* The arrow of a dropdown is drawn here, so it looks the same on every system and in both colour schemes. */
+.select { position: relative; display: block; }
+.select::after, .control.dropdown::after {
+  content: ''; position: absolute; right: 13px; top: 50%; width: 6px; height: 6px; margin-top: -5px;
+  border: solid var(--muted); border-width: 0 1.5px 1.5px 0; transform: rotate(45deg); pointer-events: none;
+}
+.control.dropdown[aria-expanded='true']::after { transform: rotate(225deg); margin-top: -1px; }
+.menu {
+  position: absolute; left: 0; top: calc(100% + 4px); z-index: 5; min-width: 100%; padding: 4px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 10px; box-shadow: var(--shadow);
+}
+.menu label { display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 6px; font-size: 14px; white-space: nowrap; cursor: pointer; }
+.menu label:hover, .menu label:focus-within { background: var(--surface-2); }
+.menu input, .option input { width: 16px; height: 16px; margin: 0; flex: none; accent-color: var(--accent); }
+.chevron { flex: none; transition: transform 0.15s; }
 
 .results-page { display: flex; flex-direction: column; height: calc(100% - 64px); }
 .results-head { padding: 4px 20px 10px; display: flex; flex-direction: column; gap: 10px; align-items: center; }
-.source-strip { display: flex; flex-wrap: wrap; gap: 6px; width: min(1200px, 100%); }
-.source-pill { font-size: 12px; padding: 2px 8px; border-radius: 999px; background: var(--surface-2); color: var(--muted); }
-.source-pill.ok { background: var(--ok-soft); color: var(--ok); }
-.source-pill.err { background: var(--bad-soft); color: var(--bad); }
+.sources { position: relative; width: min(1200px, 100%); font-size: 13px; color: var(--muted); }
+.sources-line { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 2px 6px; padding: 2px 0; text-align: left; }
+button.sources-line { border: 0; border-radius: 6px; background: none; color: inherit; cursor: pointer; }
+button.sources-line:hover > span:first-of-type { color: var(--text); }
+.sources-line .failed { color: var(--bad); }
+.sources-line .blocked { color: var(--warn); }
+.sources-line .chevron { transform: rotate(-90deg); }
+.sources-line[aria-expanded='true'] .chevron { transform: none; }
+.sources-table {
+  position: absolute; left: 0; top: calc(100% + 4px); z-index: 10; width: min(720px, 100%); max-height: min(440px, 60vh); overflow: auto;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow);
+}
+.sources-table table { width: 100%; border-collapse: collapse; }
+.sources-table th, .sources-table td { padding: 7px 14px; text-align: left; vertical-align: top; font-weight: 400; color: var(--text); }
+.sources-table thead th {
+  position: sticky; top: 0; background: var(--surface); box-shadow: inset 0 -1px var(--border);
+  font-size: 12px; font-weight: 500; color: var(--muted);
+}
+.sources-table tbody tr + tr > * { border-top: 1px solid var(--border); }
+.sources-table tbody th { width: 44%; }
+.sources-table tbody th::before {
+  content: ''; display: inline-block; width: 8px; height: 8px; margin-right: 10px; border-radius: 50%; background: var(--ok);
+}
+.sources-table .failed th::before { background: var(--bad); }
+.sources-table .blocked th::before { background: var(--warn); }
+.sources-table .off th::before { background: var(--muted); opacity: 0.45; }
+.sources-table strong { font-weight: 600; margin-right: 4px; }
+.sources-table .failed strong { color: var(--bad); }
+.sources-table .blocked strong { color: var(--warn); }
+.sources-table .why { color: var(--muted); overflow-wrap: anywhere; }
 .results-body {
   flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(280px, 400px) 1fr; gap: 16px;
   padding: 0 20px 20px; width: min(1240px, 100%); margin: 0 auto;
@@ -191,19 +241,56 @@ h1, h2, h3 { line-height: 1.2; margin: 0; }
 /* --------------------------------------------------------------- settings */
 .drawer-backdrop { position: fixed; inset: 0; background: rgb(0 0 0 / 0.3); z-index: 30; }
 .drawer {
-  position: fixed; top: 0; right: 0; bottom: 0; width: min(480px, 100%); background: var(--surface);
+  position: fixed; top: 0; right: 0; bottom: 0; width: min(520px, 100%); background: var(--surface);
   z-index: 31; overflow: auto; padding: 20px 22px 40px; box-shadow: var(--shadow);
-  display: flex; flex-direction: column; gap: 22px;
+  display: flex; flex-direction: column;
 }
-.drawer header { display: flex; justify-content: space-between; align-items: center; }
-.drawer section h3 { font-size: 15px; margin-bottom: 4px; display: flex; gap: 8px; align-items: center; }
-.drawer section > p { margin: 0 0 10px; font-size: 13px; color: var(--muted); }
-.board-list { display: flex; flex-direction: column; gap: 2px; }
-.board-list label { display: grid; grid-template-columns: 20px 1fr; gap: 8px; padding: 6px 8px; border-radius: 8px; cursor: pointer; }
-.board-list label:hover { background: var(--surface-2); }
-.board-list .blurb { font-size: 12px; color: var(--muted); }
+.drawer header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+/* A section that folds away under its heading. The heading says what is chosen inside. */
+.panel { border-top: 1px solid var(--border); }
+.panel:last-child { border-bottom: 1px solid var(--border); }
+.panel h3 { font-size: 15px; }
+.panel-head {
+  width: 100%; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 12px; align-items: center;
+  padding: 14px 2px; border: 0; border-radius: 8px; background: none; text-align: left; cursor: pointer;
+}
+.panel-head:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.panel-title { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; font-weight: 600; }
+.panel-summary { grid-column: 1; font-size: 13px; font-weight: 400; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.panel-summary.warn { color: var(--warn); }
+.panel-summary.bad { color: var(--bad); }
+.panel-head .chevron { grid-column: 2; grid-row: 1 / span 2; color: var(--muted); }
+.panel-head:hover .chevron { color: var(--text); }
+.panel-head[aria-expanded='true'] .chevron { transform: rotate(180deg); }
+.panel-body { padding: 0 2px 20px; }
+.panel-body > p { margin: 0 0 10px; font-size: 13px; color: var(--muted); }
+.panel-body h4 { margin: 18px 0 2px; font-size: 13px; font-weight: 600; }
+.panel-body .notice { margin-top: 10px; }
+/* Lists of things to tick: one to a row, or two side by side where the names are short. */
+.options { display: flex; flex-direction: column; gap: 2px; margin: 0 -8px; }
+.options.two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 2px 8px; }
+.option { display: flex; align-items: flex-start; gap: 10px; padding: 6px 8px; border-radius: 8px; cursor: pointer; }
+.option:hover { background: var(--surface-2); }
+.option input { margin-top: 3px; }
+.option-name { font-size: 14px; }
+.option-note { font-size: 12px; color: var(--muted); }
+/* Each row is a name and a few words on what it is, lined up in two columns. */
+.options.noted .option { display: grid; grid-template-columns: 16px 150px minmax(0, 1fr); gap: 0 10px; align-items: baseline; }
+.options.noted .option input { align-self: center; margin-top: 0; }
+@media (max-width: 520px) {
+  .options.two { grid-template-columns: minmax(0, 1fr); }
+  .options.noted .option { grid-template-columns: 16px minmax(0, 1fr); }
+  .options.noted .option-note { grid-column: 2; }
+  .options.noted .option input { align-self: start; margin-top: 3px; }
+}
+/* What was added by typing, one to a row, each with a way to take it out again. */
+.picked { list-style: none; margin: 8px 0 0; padding: 0; border: 1px solid var(--border); border-radius: 10px; }
+.picked li { display: flex; align-items: center; gap: 10px; min-height: 40px; padding: 4px 6px 4px 12px; }
+.picked li + li { border-top: 1px solid var(--border); }
+.picked-name { flex: 1; min-width: 0; font-size: 14px; overflow-wrap: anywhere; }
+.picked-note { font-size: 12px; color: var(--muted); text-align: right; }
+.picked .btn { color: var(--muted); }
 .combo { position: relative; }
-.combo input { width: 100%; border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; background: var(--surface-2); }
 .combo ul {
   position: absolute; left: 0; right: 0; top: calc(100% + 4px); z-index: 2; list-style: none; margin: 0; padding: 4px;
   background: var(--surface); border: 1px solid var(--border); border-radius: 10px; box-shadow: var(--shadow); max-height: 280px; overflow: auto;
@@ -216,7 +303,8 @@ h1, h2, h3 { line-height: 1.2; margin: 0; }
 .notice.ok { background: var(--ok-soft); color: var(--ok); }
 .notice.bad { background: var(--bad-soft); color: var(--bad); }
 .field-row { display: flex; gap: 8px; }
-.field-row input { flex: 1; border: 1px solid var(--border); border-radius: 8px; padding: 7px 10px; background: var(--surface-2); }
+.field-row .control { flex: 1; min-width: 0; }
+.field-row .btn { height: 36px; padding-block: 0; }
 
 /* ---------------------------------------------------------------- account */
 .account-page { width: min(520px, calc(100% - 32px)); margin: 4vh auto 0; padding-bottom: 48px; display: flex; flex-direction: column; gap: 16px; }

@@ -1,6 +1,6 @@
 # Status
 
-**Last updated: 2026-11-17.**
+**Last updated: 2026-11-24.**
 
 Where the project stands: what works, what comes next, what only Sloan can settle, and what is known to be wrong or
 unchecked. This file is rewritten whenever one of those changes, so it is always about today. What happened and
@@ -74,10 +74,6 @@ asking, with a test first. Take one out of this list in the commit that fixes it
 - A Google for Jobs posting that comes through SerpAPI with no apply options and no share link gets an empty web
   address (`src/jobs/adapters/googleJobs.ts`).
 - `htmlToText` leaves an empty line between the items of a list (`src/jobs/adapters/common.ts`).
-
-**Pages** (`src/ui/`)
-
-- The results list says "1 jobs" for a single job (`src/ui/SearchPage.tsx`).
 
 **Resume** (`src/resume/`)
 

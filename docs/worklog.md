@@ -21,6 +21,40 @@ The shape of an entry:
 **Commits:** short hashes, when the entry is written after them.
 ```
 
+## 2026-11-24: Search options as fields and lists, in place of pills
+
+**Asked for:** Sloan: "I don't like having a shit done of pills you can toggle on and off for the search options,
+it should be a more clean and organized UI that doesn't just look like a big cluster of labels".
+
+**Changed** ([decisions/0018](decisions/0018-search-options-are-fields-and-lists-not-pills.md)):
+
+- **The search box.** The filters are four fields in one row, each with its name over it: Location, Within,
+  Workplace, Posted. Workplace was three buttons to press in and out. It is one field now, which says what is
+  chosen ("Any", "Remote, Hybrid") and opens a list to tick.
+- **The settings behind the gear.** Four sections that fold away: Job boards, Companies and industries, Direct site
+  access, Search server. Each heading says what is chosen inside ("9 of 14 selected", "2 companies, 1 industry",
+  "Off", "Connected"), and warns there when no search server is set. Only the job boards are unfolded on a first
+  visit, and the panel opens the way it was left. The chosen companies are a list with one row each, where they
+  were chips. The industries are a list to tick, where they were buttons to press in and out.
+- **After a search.** The row of one pill per source is one line: "9 of 12 sources answered · 1 failed · 1
+  blocked · 1 off". Pressing it opens a table with a row for each source: what went wrong and why at the top, then
+  how many jobs each one found.
+- **What a search does is the same.** The same filters and settings, stored the same way, so nothing saved in a
+  browser is lost. One thing more is kept there: which sections of the settings are unfolded.
+- **For the code:** the controls the pages share are in `src/ui/controls.tsx`. The browser test now sets a filter
+  and opens the table of sources.
+
+**Found on the way:**
+
+- The results list said "1 jobs" for a single job. It was a known gap in [status.md](status.md). It says "1 job"
+  now, with a test.
+- While this was built, a new style named `.field` met the resume page's `.field`, and the filters lay over each
+  other. Nothing but a browser showed it, because the component tests do not load the stylesheet. The style was
+  renamed before anything landed, and the browser test now presses the filters, which a browser refuses when
+  something lies over them.
+
+**Left open:** nothing from this request.
+
 ## 2026-11-17: Tests at every layer, and documentation written for agents
 
 **Asked for:** Sloan: "Let's make sure we have documentation to track our work and the design decisions. The

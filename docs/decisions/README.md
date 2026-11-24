@@ -27,6 +27,7 @@ Questions that are still open are not here. They are in [status.md](../status.md
 | [0015](0015-job-html-is-sanitized-and-the-app-runs-under-a-strict-policy.md) | Job site HTML is sanitized, and the app runs under a strict policy | 2026-11-17 | Claude |
 | [0016](0016-how-the-code-is-tested.md) | How the code is tested | 2026-11-17 | Claude |
 | [0017](0017-how-the-documentation-is-organized.md) | How the documentation is organized | 2026-11-17 | Claude |
+| [0018](0018-search-options-are-fields-and-lists-not-pills.md) | Search options are fields and lists, not pills | 2026-11-24 | Sloan and Claude |
 
 Dates are UTC. Every record so far has the status Accepted.
 

@@ -96,6 +96,7 @@ Run from the repository root. Node 22.12 or newer.
 | Change how parts fit together | [docs/architecture.md](docs/architecture.md) |
 | Write or fix a test | [docs/testing.md](docs/testing.md) |
 | Add or fix a job source | [docs/job-sources.md](docs/job-sources.md), [docs/fetch-tiers.md](docs/fetch-tiers.md), then "Adding a job source" in [docs/testing.md](docs/testing.md#adding-a-job-source) |
+| Add a filter or a setting to the search page | [0018](docs/decisions/0018-search-options-are-fields-and-lists-not-pills.md): fields and lists, never pills. The controls are in `src/ui/controls.tsx` |
 | Touch resume reading | [docs/resume-model.md](docs/resume-model.md) |
 | Touch sign-in, sessions or the database | [docs/accounts.md](docs/accounts.md) |
 | Build tracking, the login vault or applying | [docs/applications-plan.md](docs/applications-plan.md) |

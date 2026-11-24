@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import basicResume from '../../test/fixtures/resumes/basic.txt?raw';
 import { DEFAULT_BOARDS } from '../jobs/boards';
-import type { JobPosting, SearchResponse, SourceStatus } from '../jobs/types';
+import type { JobPosting, JobQuery, SearchResponse, SourceStatus } from '../jobs/types';
 import { buildTextSource } from '../resume/extract';
 import { listFields, updateField } from '../resume/model';
 import { parseResume } from '../resume/parse';
@@ -39,9 +39,21 @@ function open(routes: Record<string, Route>, resume: Parameters<typeof SearchPag
   return { server, user, page };
 }
 
-async function search(user: ReturnType<typeof userEvent.setup>, role = 'software engineer') {
+type User = ReturnType<typeof userEvent.setup>;
+
+async function search(user: User, role = 'software engineer') {
   await user.type(screen.getByLabelText('Role'), role);
   await user.click(screen.getByRole('button', { name: 'Search' }));
+}
+
+/** The workplace field. Its name ends with what is chosen: "Workplace Any", "Workplace Remote, Hybrid". */
+const workplace = () => screen.getByRole('button', { name: /^Workplace/ });
+
+/** Opens the list behind the workplace field, ticks or unticks each of `names`, and closes the list again. */
+async function tickWorkplace(user: User, ...names: string[]) {
+  await user.click(workplace());
+  for (const name of names) await user.click(screen.getByRole('checkbox', { name }));
+  await user.keyboard('{Escape}');
 }
 
 describe('before a search', () => {
@@ -54,9 +66,26 @@ describe('before a search', () => {
 
     await user.type(screen.getByLabelText('Role'), 'p');
 
-    expect(screen.getByLabelText('Location')).toBeInTheDocument();
-    expect(screen.getByRole('group', { name: 'Workplace' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Location')).toHaveValue('');
+    expect(screen.getByLabelText('Within')).toHaveDisplayValue('25 mi');
+    expect(workplace()).toHaveAccessibleName('Workplace Any');
+    expect(screen.getByLabelText('Posted')).toHaveDisplayValue('Any time');
     expect(screen.getByRole('button', { name: 'Search' })).toBeEnabled();
+  });
+
+  it('has each filter as a field with its name over it, and none as a switch to press in and out', async () => {
+    // Sloan asked for this (docs/decisions/0018-search-options-are-fields-and-lists-not-pills.md).
+    const { user } = open({});
+    await user.type(screen.getByLabelText('Role'), 'pilot');
+    const box = within(screen.getByRole('search'));
+    for (const name of ['Location', 'Within', 'Workplace', 'Posted']) expect(box.getByText(name)).toBeInTheDocument();
+
+    // The workplaces are a list of ticks behind their field, where they were three buttons side by side.
+    await user.click(workplace());
+    const list = within(box.getByRole('group', { name: 'Workplace' }));
+    expect(list.getAllByRole('checkbox')).toHaveLength(3);
+    for (const name of ['Remote', 'Hybrid', 'On-site']) expect(list.getByRole('checkbox', { name })).not.toBeChecked();
+    expect(document.querySelector('[aria-pressed]')).toBeNull();
   });
 
   it('does not search for a role that is only spaces', async () => {
@@ -72,25 +101,26 @@ describe('before a search', () => {
     await user.type(screen.getByLabelText('Location'), 'Austin, TX');
     expect(screen.getByLabelText('Within')).toBeEnabled();
 
-    await user.click(screen.getByRole('button', { name: 'Remote' }));
-    expect(screen.getByRole('button', { name: 'Remote' })).toHaveAttribute('aria-pressed', 'true');
+    await tickWorkplace(user, 'Remote');
+    expect(workplace()).toHaveAccessibleName('Workplace Remote');
     expect(screen.getByLabelText('Location')).toBeDisabled();
     expect(screen.getByLabelText('Location')).toHaveAttribute('placeholder', 'Anywhere');
     expect(screen.getByLabelText('Within')).toBeDisabled();
 
-    await user.click(screen.getByRole('button', { name: 'Hybrid' }));
+    await tickWorkplace(user, 'Hybrid');
+    expect(workplace()).toHaveAccessibleName('Workplace Remote, Hybrid');
     expect(screen.getByLabelText('Location')).toBeEnabled();
   });
 
   it('remembers the last search for the next visit', async () => {
     const { user, page } = open({});
     await user.type(screen.getByLabelText('Role'), 'air traffic controller');
-    await user.click(screen.getByRole('button', { name: 'On-site' }));
+    await tickWorkplace(user, 'On-site');
     page.unmount();
 
     render(<SearchPage resume={null} />);
     expect(screen.getByLabelText('Role')).toHaveValue('air traffic controller');
-    expect(screen.getByRole('button', { name: 'On-site' })).toHaveAttribute('aria-pressed', 'true');
+    expect(workplace()).toHaveAccessibleName('Workplace On-site');
   });
 });
 
@@ -100,7 +130,7 @@ describe('searching', () => {
     await user.type(screen.getByLabelText('Role'), ' software engineer ');
     await user.type(screen.getByLabelText('Location'), 'Austin, TX');
     await user.selectOptions(screen.getByLabelText('Within'), '50 mi');
-    await user.click(screen.getByRole('button', { name: 'Hybrid' }));
+    await tickWorkplace(user, 'Hybrid');
     await user.selectOptions(screen.getByLabelText('Posted'), 'Past week');
     await user.click(screen.getByRole('button', { name: 'Search' }));
 
@@ -111,6 +141,19 @@ describe('searching', () => {
       query: { role: 'software engineer', location: 'Austin, TX', distanceMiles: 50, workplace: ['hybrid'], postedWithinDays: 7 },
       settings: { boards: DEFAULT_BOARDS, companies: [], industries: [], allowScraping: false },
     });
+  });
+
+  it('asks for any workplace until some are ticked, then for each one that is', async () => {
+    const { user, server } = open({ 'POST /api/search': () => found([]) });
+    await search(user, 'pilot');
+    await screen.findByText(/No jobs found/);
+
+    await tickWorkplace(user, 'On-site', 'Remote');
+    await user.click(screen.getByRole('button', { name: 'Search' }));
+
+    await waitFor(() => expect(server.sent('POST /api/search')).toHaveLength(2));
+    const asked = server.sent('POST /api/search').map((call) => (call.body as { query: JobQuery }).query.workplace);
+    expect(asked).toEqual([[], ['remote', 'onsite']]);
   });
 
   it('can be started with the Enter key', async () => {
@@ -131,7 +174,7 @@ describe('searching', () => {
     expect(server.sent('POST /api/search')).toHaveLength(1);
 
     reply.release(found([job()]));
-    expect(await screen.findByRole('listbox', { name: '1 jobs' })).toBeInTheDocument();
+    expect(await screen.findByRole('listbox', { name: '1 job' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Search' })).toBeEnabled();
   });
 
@@ -142,7 +185,7 @@ describe('searching', () => {
 
     server.routes['POST /api/search'] = () => found([job()]);
     await user.click(screen.getByRole('button', { name: 'Search' }));
-    expect(await screen.findByRole('listbox', { name: '1 jobs' })).toBeInTheDocument();
+    expect(await screen.findByRole('listbox', { name: '1 job' })).toBeInTheDocument();
     expect(screen.queryByText(/Search failed/)).not.toBeInTheDocument();
   });
 });
@@ -154,7 +197,9 @@ describe('the results', () => {
     const { user } = open({ 'POST /api/search': () => found([job(), second]) });
     await search(user);
 
-    const cards = within(await screen.findByRole('listbox', { name: '2 jobs' })).getAllByRole('option');
+    const list = await screen.findByRole('listbox', { name: '2 jobs' });
+    expect(within(list).getByText('2 jobs')).toBeInTheDocument();
+    const cards = within(list).getAllByRole('option');
     expect(cards).toHaveLength(2);
     expect(cards[0]).toHaveTextContent('Software Engineer');
     expect(cards[0]).toHaveTextContent('Acme · Austin, TX');
@@ -192,21 +237,10 @@ describe('the results', () => {
     expect(screen.queryByRole('article')).not.toBeInTheDocument();
   });
 
-  it('shows how each source did: how many it found, or that it was blocked, failed or is switched off', async () => {
-    const sources = [
-      source({ count: 1 }),
-      source({ sourceId: 'linkedin-guest', label: 'LinkedIn', ok: false, count: 0, blocked: true, error: 'www.linkedin.com turned this server away as automated traffic (999)' }),
-      source({ sourceId: 'remoteok', label: 'Remote OK', ok: false, count: 0, error: 'remoteok.com answered 500' }),
-      source({ sourceId: 'usajobs', label: 'USAJOBS', ok: false, count: 0, skipped: 'needs USAJOBS_API_KEY on the server' }),
-    ];
-    const { user } = open({ 'POST /api/search': () => found([job()], sources) });
+  it('counts a single job as one job', async () => {
+    const { user } = open({ 'POST /api/search': () => found([job()]) });
     await search(user);
-
-    const strip = await screen.findByLabelText('Sources searched');
-    expect([...strip.children].map((pill) => pill.textContent)).toEqual(['Acme (greenhouse): 1', 'LinkedIn: blocked', 'Remote OK: error', 'USAJOBS: off']);
-    expect(within(strip).getByText('Remote OK: error')).toHaveAttribute('title', 'remoteok.com answered 500');
-    expect(within(strip).getByText('USAJOBS: off')).toHaveAttribute('title', 'needs USAJOBS_API_KEY on the server');
-    expect(within(strip).getByText('Acme (greenhouse): 1')).toHaveAttribute('title', '1 jobs in 120 ms');
+    expect(within(await screen.findByRole('listbox', { name: '1 job' })).getByText('1 job')).toBeInTheDocument();
   });
 
   it('says so when nothing was found, and which sources were not searched at all', async () => {
@@ -231,6 +265,88 @@ describe('the results', () => {
     expect(within(detail).getByText('No description provided by this source.')).toBeInTheDocument();
     expect(within(detail).queryByText(/Posted/)).not.toBeInTheDocument();
     expect(detail.querySelector('.facts')).toHaveTextContent(/^Acme$/);
+  });
+});
+
+describe('how the sources did', () => {
+  const sources = [
+    source({ count: 1 }),
+    source({ sourceId: 'linkedin-guest', label: 'LinkedIn', ok: false, count: 0, blocked: true, error: 'www.linkedin.com turned this server away as automated traffic (999)' }),
+    source({ sourceId: 'remoteok', label: 'Remote OK', ok: false, count: 0, error: 'remoteok.com answered 500' }),
+    source({ sourceId: 'usajobs', label: 'USAJOBS', ok: false, count: 0, skipped: 'needs USAJOBS_API_KEY on the server' }),
+    source({ sourceId: 'company:globex', label: 'Globex (lever)', count: 12, ms: 300 }),
+  ];
+
+  /** Searches, and gives the line under the search box that says how the sources did. */
+  async function searched(answered: SourceStatus[], jobs = [job()]) {
+    const { user } = open({ 'POST /api/search': () => found(jobs, answered) });
+    await search(user);
+    const report = await screen.findByRole('region', { name: 'Sources searched' });
+    return { user, report, line: () => within(report).getByRole('button') };
+  }
+  /** The table behind the line, as [source, result] for each row. */
+  const rows = (report: HTMLElement) =>
+    within(within(report).getByRole('table'))
+      .getAllByRole('row')
+      .slice(1)
+      .map((row) => [...row.children].map((cell) => cell.textContent));
+
+  it('is one line: how many answered, and how many failed, were blocked or are off', async () => {
+    const { report, line } = await searched(sources);
+    expect(line()).toHaveTextContent('2 of 5 sources answered · 1 failed · 1 blocked · 1 off');
+    expect(line()).toHaveAccessibleName('2 of 5 sources answered, 1 failed, 1 blocked, 1 off');
+    expect(line()).toHaveAttribute('aria-expanded', 'false');
+    expect(within(report).queryByRole('table')).not.toBeInTheDocument();
+  });
+
+  it('says so in fewer words when every source answered', async () => {
+    const { line } = await searched([source(), source({ sourceId: 'usajobs', label: 'USAJOBS', count: 4 })]);
+    expect(line()).toHaveAccessibleName('All 2 sources answered');
+  });
+
+  it('counts a single source as one source', async () => {
+    const { line } = await searched([source({ ok: false, count: 0, error: 'boards.greenhouse.io answered 500' })]);
+    expect(line()).toHaveAccessibleName('0 of 1 source answered, 1 failed');
+  });
+
+  it('opens to a table with a row for each source: what went wrong and why first, then how many jobs each found', async () => {
+    const { user, report, line } = await searched(sources);
+    await user.click(line());
+
+    expect(line()).toHaveAttribute('aria-expanded', 'true');
+    expect(within(report).getAllByRole('columnheader').map((h) => h.textContent)).toEqual(['Source', 'Result']);
+    expect(rows(report)).toEqual([
+      ['Remote OK', 'Failed remoteok.com answered 500'],
+      ['LinkedIn', 'Blocked www.linkedin.com turned this server away as automated traffic (999)'],
+      ['USAJOBS', 'Off needs USAJOBS_API_KEY on the server'],
+      ['Acme (greenhouse)', '1 job'],
+      ['Globex (lever)', '12 jobs'],
+    ]);
+    expect(within(report).getByRole('cell', { name: '12 jobs' })).toHaveAttribute('title', 'Answered in 300 ms');
+  });
+
+  it('closes the table with a second press, with Escape, and with a press anywhere else', async () => {
+    const { user, report, line } = await searched(sources);
+    const table = () => within(report).queryByRole('table');
+
+    await user.click(line());
+    await user.click(line());
+    expect(table()).not.toBeInTheDocument();
+
+    await user.click(line());
+    await user.keyboard('{Escape}');
+    expect(table()).not.toBeInTheDocument();
+    expect(line()).toHaveFocus();
+
+    await user.click(line());
+    await user.click(screen.getByRole('option', { name: /Software Engineer/ }));
+    expect(table()).not.toBeInTheDocument();
+  });
+
+  it('says so when there was nothing to search', async () => {
+    const { report } = await searched([], []);
+    expect(report).toHaveTextContent('No sources were searched. Choose where to search with the gear.');
+    expect(within(report).queryByRole('button')).not.toBeInTheDocument();
   });
 });
 
