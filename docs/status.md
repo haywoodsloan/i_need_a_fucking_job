@@ -1,6 +1,6 @@
 # Status
 
-**Last updated: 2026-11-17.**
+**Last updated: 2026-11-24.**
 
 Where the project stands: what works, what comes next, what only Sloan can settle, and what is known to be wrong or
 unchecked. This file is rewritten whenever one of those changes, so it is always about today. What happened and
@@ -47,7 +47,7 @@ the question.
 
 | # | What | Why it matters | Recommended |
 | --- | --- | --- | --- |
-| 1 | **API keys** in `server/.env`: Google for Jobs (JSearch or SerpAPI), and USAJOBS | Without the Google key, listings from LinkedIn, Indeed, Glassdoor and ZipRecruiter mostly do not arrive. Neither source has ever run against the real service. `server/.env.example` names the settings. | JSearch's free tier to start. The USAJOBS key is free. |
+| 1 | **Try the Google for Jobs key on the laptop, and get a USAJOBS key.** Sloan has a JSearch key from OpenWeb Ninja since 2026-11-24. It goes into `server/.env` as `OPENWEBNINJA_API_KEY`. Then `git pull`, start the server again, and run `npm run smoke --prefix server` ([the steps](job-sources.md#getting-an-openweb-ninja-key)). | Without the Google key, listings from LinkedIn, Indeed, Glassdoor and ZipRecruiter mostly do not arrive. The route was written from the service's description and has never run with a key, so this first run is its real test. USAJOBS has never run against the real service either. `server/.env.example` names the settings. | Stay on JSearch's free plan to start: 200 requests a month, up to 2 for a search ([what a search costs](job-sources.md#what-a-search-costs)). The USAJOBS key is free. |
 | 2 | **Decisions 2 to 7 of the plan** ([the table](applications-plan.md#2-decisions-for-sloan)): who presses Submit, a domain, forgotten passwords and stored logins, whether data may leave the browser, whether AI may suggest wording, hosting a small model | Step 1 needs decision 5. Step 2 needs 2. Step 4 needs 3. Step A needs 5, 6 and 7. Step 0 was built on the recommended answer to 4. | The default written next to each one in the plan |
 | 3 | **Delete the old Indeed route?** `server/src/indeed.ts` loads Indeed in a browser that hides that it is automated. | It goes against rule 2 ([0007](decisions/0007-no-bot-check-bypass.md)). It is off unless `ENABLE_PLAYWRIGHT` is set, and nothing tests it. | Delete it, and the "Direct site access" wording for Indeed with it. Indeed listings still arrive through Google for Jobs. |
 | 4 | **Try accounts on the laptop:** `git pull`, both installs, then `npm run admin -- setup you@example.com` | The account tests pass on Windows in CI, but nobody has used sign-in on a real Windows machine yet. | |
@@ -73,6 +73,10 @@ asking, with a test first. Take one out of this list in the commit that fixes it
 
 - A Google for Jobs posting that comes through SerpAPI with no apply options and no share link gets an empty web
   address (`src/jobs/adapters/googleJobs.ts`).
+- Nothing limits how much of the month's Google for Jobs allowance one search may use. Each chosen company that
+  has no feed of its own is a search of its own, and picking an industry adds every such company in it
+  ([what a search costs](job-sources.md#what-a-search-costs)). On a plan that stops at 200 requests that adds up
+  fast. Those searches also go out side by side, which a plan with a limit per second may refuse.
 - `htmlToText` leaves an empty line between the items of a list (`src/jobs/adapters/common.ts`).
 
 **Pages** (`src/ui/`)
@@ -93,7 +97,7 @@ asking, with a test first. Take one out of this list in the commit that fixes it
 
 **Tests**
 
-- All twelve recordings of job sources are hand-typed (row 5 above).
+- All thirteen recordings of job sources are hand-typed (row 5 above).
 - [testing.md](testing.md#what-is-not-tested) lists what a green run does not cover.
 
 **Tooling**
@@ -117,5 +121,7 @@ Built and tested with stand-ins, never yet run for real:
 - The breached-password lookup against the real service. To check: try to create an account with
   `password1234567`. It should be refused.
 - The fixture recorder against the live job sites (row 5 above).
-- Google for Jobs and USAJOBS with real keys (row 1 above).
+- Google for Jobs with a real key, through any of its three services, and USAJOBS (row 1 above). What JSearch
+  answers when a plan's requests run out has not been seen either
+  ([job-sources.md](job-sources.md#when-google-for-jobs-does-not-answer)).
 - The points in [applications-plan.md](applications-plan.md#16-to-confirm-on-live-sites), section 16.

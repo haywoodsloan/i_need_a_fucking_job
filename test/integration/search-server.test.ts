@@ -13,7 +13,7 @@ const greenhouse = loadCassette('greenhouse');
 const remotive = loadCassette('remotive');
 const remoteok = loadCassette('remoteok');
 const usajobs = loadCassette('usajobs');
-const jsearch = loadCassette('jsearch');
+const openwebninja = loadCassette('openwebninja');
 const smartrecruiters = loadCassette('smartrecruiters');
 
 const employer = greenhouse.search.options as BoardOpts;
@@ -36,8 +36,8 @@ async function start(o: Partial<TestServerOptions> & { cassettes?: Cassette[] } 
 describe('searching', () => {
   it('runs every chosen source and returns one merged, newest-first list with a status per source', async () => {
     const { s, net } = await start({
-      cassettes: [greenhouse, remotive, remoteok, usajobs, jsearch],
-      env: { ...usajobs.search.env, ...jsearch.search.env },
+      cassettes: [greenhouse, remotive, remoteok, usajobs, openwebninja],
+      env: { ...usajobs.search.env, ...openwebninja.search.env },
       // The typed company is found on Greenhouse. Finding it is tested on its own in test/server/discover.test.ts.
       discover: async (name) => (name === employer.company ? { platform: 'greenhouse', board: employer.board } : undefined),
     });
@@ -140,14 +140,54 @@ describe('searching', () => {
     expect((await s.get('/api/health')).json<{ fetch: { blocked: number } }>().fetch.blocked).toBe(1);
   });
 
+  it('says in plain words why Google for Jobs turned the search down, and still returns the other sources', async () => {
+    const others = replay(remotive, remoteok);
+    const asked: { url: string; key: string | null }[] = [];
+    const { s } = await start({
+      env: { OPENWEBNINJA_API_KEY: 'ninja-key-123' },
+      // With the retries a real server makes, to show that this is not one of the answers it tries again.
+      fetcher: { retries: 2 },
+      network: async (url, init) => {
+        if (!url.startsWith('https://api.openwebninja.com/')) return others(url, init);
+        asked.push({ url, key: new Headers(init?.headers).get('x-api-key') });
+        // What the service answers to a key it does not know.
+        return Response.json({ message: 'Unauthorized' }, { status: 401 });
+      },
+    });
+    const reply = await s.post('/api/search', { query, settings: { ...noBoards, boards: ['linkedin', 'remote-boards'] } });
+    const { jobs, sources } = reply.json<SearchResponse>();
+    const google = sources.find((x) => x.sourceId === 'google-jobs');
+    expect(google).toMatchObject({
+      label: 'Google for Jobs (JSearch, OpenWeb Ninja)',
+      ok: false,
+      count: 0,
+      error:
+        'api.openwebninja.com answered 401 (Unauthorized): it did not accept the key in OPENWEBNINJA_API_KEY. ' +
+        'Check the key, that its account has a plan for JSearch (the free one counts), and that the plan has requests left this month.',
+    });
+    // A key that is turned down is not a bot check.
+    expect(google?.blocked).toBeUndefined();
+    expect(jobs.length).toBeGreaterThan(0);
+
+    // It was asked once: a refusal is not tried again. The key went in a header, and the server tells it to nobody.
+    expect(asked).toHaveLength(1);
+    expect(asked[0].key).toBe('ninja-key-123');
+    expect(asked[0].url).toContain('/jsearch/search-v2?');
+    expect(asked[0].url).not.toContain('ninja-key-123');
+    const health = await s.get('/api/health');
+    expect(health.json<{ sources: { googleJobs: string } }>().sources.googleJobs).toBe('Google for Jobs (JSearch, OpenWeb Ninja)');
+    expect(reply.text + health.text).not.toContain('ninja-key-123');
+    expect(s.errors).toEqual([]);
+  });
+
   it('says which sources were left out, and why, when the server has no key for them', async () => {
     const { s, net } = await start();
     const { jobs, sources } = (await s.post('/api/search', { query, settings: { ...noBoards, boards: ['linkedin', 'usajobs'], companies: ['custom:Somewhere'] } })).json<SearchResponse>();
     expect(jobs).toEqual([]);
     expect(sources).toMatchObject([
-      { sourceId: 'google-jobs', ok: false, skipped: 'needs JSEARCH_API_KEY or SERPAPI_KEY on the server' },
+      { sourceId: 'google-jobs', ok: false, skipped: 'needs OPENWEBNINJA_API_KEY, JSEARCH_API_KEY or SERPAPI_KEY on the server' },
       { sourceId: 'usajobs', ok: false, skipped: 'needs USAJOBS_API_KEY, USAJOBS_USER_AGENT on the server' },
-      { sourceId: 'company:somewhere', ok: false, error: 'needs JSEARCH_API_KEY or SERPAPI_KEY on the server' },
+      { sourceId: 'company:somewhere', ok: false, error: 'needs OPENWEBNINJA_API_KEY, JSEARCH_API_KEY or SERPAPI_KEY on the server' },
     ]);
     // Looking the company up was tried on every hiring system, and nothing else was asked.
     expect(net.calls.every((c) => /greenhouse|lever|ashby|smartrecruiters/.test(c.url))).toBe(true);

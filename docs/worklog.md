@@ -21,6 +21,54 @@ The shape of an entry:
 **Commits:** short hashes, when the entry is written after them.
 ```
 
+## 2026-11-24: Google for Jobs through a JSearch key from OpenWeb Ninja
+
+**Asked for:** Sloan: "RapidAPI isn't working right, it gives me an error when I try to setup and account. We need
+another options". And, a little later: "I found OpenWeb Ninja has JSearch. I've got an API key now".
+
+**Changed** ([decisions/0018](decisions/0018-jsearch-is-read-from-its-maker-first.md),
+[job-sources.md](job-sources.md#google-for-jobs-the-key-and-what-a-search-costs)):
+
+- A new setting, `OPENWEBNINJA_API_KEY`, reads Google for Jobs through JSearch at its maker's own address
+  (`api.openwebninja.com`), with the key in the `x-api-key` header. No RapidAPI account is needed.
+- The RapidAPI key (`JSEARCH_API_KEY`) and SerpAPI (`SERPAPI_KEY`) still work. When more than one is set, the
+  server uses the first of the three, in that order, and `/api/health` says which.
+- JSearch is now one piece of code with two doors. Both ask `/search-v2`, the search the service lists today.
+- A search that is turned down says what the service said and which setting to look at, for a key that is not
+  accepted (401, 403) and for a used-up plan (429). The key is never part of that sentence.
+- `GOOGLE_JOBS_PAGES` sets how many pages of ten a search asks for. It stays at two. Every page is one request of
+  the plan, and the free plan stops at 200 a month.
+- [job-sources.md](job-sources.md#getting-an-openweb-ninja-key) has the steps to get a key, what a search costs,
+  and what each failure message means. `server/.env.example` names the new settings.
+- `JobQuery.page` is gone. Only the old JSearch code read it.
+- Tests: `src/jobs/adapters/googleJobs.test.ts` is new, and a thirteenth stored answer,
+  `test/fixtures/sources/openwebninja.json`, is replayed like the others.
+
+**Found on the way:**
+
+- **SerpAPI was already supported.** The first idea was to add it. It was in the code from the first build, so
+  nothing had to be added to have a second service.
+- **The RapidAPI route asked for a search that JSearch no longer lists** (`/search`, with `page` and
+  `remote_jobs_only`, answered with a bare list). It moved to `/search-v2` with the new route. Nobody had run it
+  with a key, so nobody had seen it fail.
+- **Two postings could get the same id** when they came through SerpAPI. Its ids are long, encoded text that
+  begins with the job's title, and they were cut off at 120 characters. To the results list such a pair would be
+  one posting: choosing the second shows the first. This was found by reading the code, not seen in use. Long ids
+  are now cut and closed with a checksum of the whole id. JSearch's newer answers have long ids as well, next to
+  a short one that is used when it is there.
+- **The cloud machine this was written on cannot reach the job services**, so nothing here ran against the real
+  one. The service's published description was read through the browser on Sloan's computer, and one request
+  without a key was sent to see how it refuses.
+
+**Left open:**
+
+- The new route has never run with a key. Its first run is on the laptop
+  ([status.md](status.md#waiting-on-sloan), row 1). The same goes for the RapidAPI route after its move.
+- What JSearch answers when the free allowance is used up is not documented and was not seen.
+- A search does not move on to another service when the one in use refuses. That is on purpose
+  ([0018](decisions/0018-jsearch-is-read-from-its-maker-first.md)) and is Sloan's to change.
+- Nothing limits how many requests one search may use ([status.md](status.md#known-gaps)).
+
 ## 2026-11-17: Tests at every layer, and documentation written for agents
 
 **Asked for:** Sloan: "Let's make sure we have documentation to track our work and the design decisions. The

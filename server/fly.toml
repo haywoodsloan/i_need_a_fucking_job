@@ -1,4 +1,4 @@
-# Fly.io deploy:  fly launch --no-deploy --copy-config && fly secrets set JSEARCH_API_KEY=... && fly deploy
+# Fly.io deploy:  fly launch --no-deploy --copy-config && fly secrets set OPENWEBNINJA_API_KEY=... && fly deploy
 # Run from the repo root so the Docker build can see src/jobs.
 app = "job-hunt-search"
 primary_region = "dfw"

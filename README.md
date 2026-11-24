@@ -46,7 +46,7 @@ a resume upload and a sign-in.
 
 | Needs | Why it can't live on GitHub Pages | Lives in |
 | --- | --- | --- |
-| Google for Jobs API key (JSearch or SerpAPI) | secret key | `server/` env |
+| Google for Jobs API key (JSearch or SerpAPI: [how to get one](docs/job-sources.md#google-for-jobs-the-key-and-what-a-search-costs)) | secret key | `server/` env |
 | USAJOBS API key | secret key | `server/` env |
 | Workday, Amazon Jobs, Remote OK | endpoints don't allow browser (CORS) requests | `server/` |
 | LinkedIn public pages, company auto-discovery | no CORS, needs server-side requests | `server/` |
@@ -117,7 +117,7 @@ Variables → `VITE_API_URL`.
 
 ```bash
 fly launch --no-deploy --copy-config --config server/fly.toml
-fly secrets set --config server/fly.toml JSEARCH_API_KEY=… USAJOBS_API_KEY=… USAJOBS_USER_AGENT=you@example.com \
+fly secrets set --config server/fly.toml OPENWEBNINJA_API_KEY=… USAJOBS_API_KEY=… USAJOBS_USER_AGENT=you@example.com \
   ALLOWED_ORIGINS=https://haywoodsloan.github.io
 fly deploy --config server/fly.toml
 ```

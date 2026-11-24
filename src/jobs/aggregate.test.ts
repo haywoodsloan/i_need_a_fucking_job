@@ -82,9 +82,14 @@ describe('merging what the sources returned', () => {
 });
 
 describe('choosing the sources for a search', () => {
-  it('uses JSearch for Google for Jobs when both keys are set, and SerpAPI when only that one is', () => {
-    expect(googleJobsAdapter(ctx({ JSEARCH_API_KEY: 'a', SERPAPI_KEY: 'b' }))?.label).toBe('Google for Jobs (JSearch)');
-    expect(googleJobsAdapter(ctx({ SERPAPI_KEY: 'b' }))?.label).toBe('Google for Jobs (SerpAPI)');
+  it('reads Google for Jobs through the first service it has a key for: JSearch from its maker, then JSearch on RapidAPI, then SerpAPI', () => {
+    expect(googleJobsAdapter(ctx({ OPENWEBNINJA_API_KEY: 'a', JSEARCH_API_KEY: 'b', SERPAPI_KEY: 'c' }))?.label).toBe('Google for Jobs (JSearch, OpenWeb Ninja)');
+    expect(googleJobsAdapter(ctx({ OPENWEBNINJA_API_KEY: 'a', SERPAPI_KEY: 'c' }))?.label).toBe('Google for Jobs (JSearch, OpenWeb Ninja)');
+    expect(googleJobsAdapter(ctx({ JSEARCH_API_KEY: 'b', SERPAPI_KEY: 'c' }))?.label).toBe('Google for Jobs (JSearch, RapidAPI)');
+    expect(googleJobsAdapter(ctx({ SERPAPI_KEY: 'c' }))?.label).toBe('Google for Jobs (SerpAPI)');
+    // A setting that is there but empty, as in a copied .env.example, is no key.
+    expect(googleJobsAdapter(ctx({ OPENWEBNINJA_API_KEY: '', JSEARCH_API_KEY: '', SERPAPI_KEY: 'c' }))?.label).toBe('Google for Jobs (SerpAPI)');
+    expect(googleJobsAdapter(ctx({ OPENWEBNINJA_API_KEY: '', JSEARCH_API_KEY: '', SERPAPI_KEY: '' }))).toBeUndefined();
     expect(googleJobsAdapter(ctx())).toBeUndefined();
   });
 
@@ -98,11 +103,11 @@ describe('choosing the sources for a search', () => {
 
   it('says which keys a source is waiting for', () => {
     expect(plan({ boards: ['linkedin', 'usajobs'] })).toEqual([
-      ['google-jobs', 'needs JSEARCH_API_KEY or SERPAPI_KEY on the server'],
+      ['google-jobs', 'needs OPENWEBNINJA_API_KEY, JSEARCH_API_KEY or SERPAPI_KEY on the server'],
       ['usajobs', 'needs USAJOBS_API_KEY, USAJOBS_USER_AGENT on the server'],
     ]);
     expect(plan({ boards: ['usajobs'] }, { USAJOBS_API_KEY: 'k' })).toEqual([
-      ['google-jobs', 'needs JSEARCH_API_KEY or SERPAPI_KEY on the server'],
+      ['google-jobs', 'needs OPENWEBNINJA_API_KEY, JSEARCH_API_KEY or SERPAPI_KEY on the server'],
       ['usajobs', 'needs USAJOBS_USER_AGENT on the server'],
     ]);
   });
@@ -169,22 +174,56 @@ describe('running a search', () => {
   });
 
   it('falls back to Google for Jobs for a company found nowhere, keeping only that employer', async () => {
-    const fetch: FetchLike = async () =>
-      Response.json({
-        data: [
-          { job_id: '1', job_title: 'Engineer', employer_name: 'Acme Robotics, Inc.', job_publisher: 'LinkedIn', job_apply_link: 'https://l/1' },
-          { job_id: '2', job_title: 'Engineer', employer_name: 'Other Robotics', job_publisher: 'LinkedIn', job_apply_link: 'https://l/2' },
-        ],
+    const asked: string[] = [];
+    const fetch: FetchLike = async (url) => {
+      asked.push(url);
+      return Response.json({
+        status: 'OK',
+        data: {
+          jobs: [
+            { job_id: '1', job_title: 'Engineer', employer_name: 'Acme Robotics, Inc.', job_publisher: 'LinkedIn', job_apply_link: 'https://l/1' },
+            { job_id: '2', job_title: 'Engineer', employer_name: 'Other Robotics', job_publisher: 'LinkedIn', job_apply_link: 'https://l/2' },
+          ],
+          cursor: null,
+        },
       });
-    const out = await aggregate({ role: 'engineer' }, custom, ctx({ JSEARCH_API_KEY: 'k' }, fetch), { runtime: 'server', discover: async () => undefined });
+    };
+    const out = await aggregate({ role: 'engineer' }, custom, ctx({ OPENWEBNINJA_API_KEY: 'k' }, fetch), { runtime: 'server', discover: async () => undefined });
+    // The company's name goes into the search, and each company searched this way is one more search of the plan.
+    expect(asked.map((url) => new URL(url).searchParams.get('query'))).toEqual(['engineer Acme Robotics']);
     expect(out.jobs.map((j) => j.company)).toEqual(['Acme Robotics, Inc.']);
     expect(out.sources[0]).toMatchObject({ ok: true, count: 1 });
+  });
+
+  it('asks only the first Google for Jobs service it has a key for', async () => {
+    const asked: string[] = [];
+    const fetch: FetchLike = async (url) => {
+      asked.push(new URL(url).host);
+      return Response.json({ status: 'OK', data: { jobs: [{ job_id: '1', job_title: 'Engineer', employer_name: 'Acme', job_publisher: 'LinkedIn', job_apply_link: 'https://l/1' }], cursor: null } });
+    };
+    const out = await aggregate({ role: 'engineer' }, settings({ boards: ['linkedin'] }), ctx({ OPENWEBNINJA_API_KEY: 'a', JSEARCH_API_KEY: 'b', SERPAPI_KEY: 'c' }, fetch), { runtime: 'server' });
+    expect(asked).toEqual(['api.openwebninja.com']);
+    expect(out.sources).toMatchObject([{ sourceId: 'google-jobs', label: 'Google for Jobs (JSearch, OpenWeb Ninja)', ok: true, count: 1 }]);
+  });
+
+  it("shows that service's refusal as it is, and does not go on to spend the next service's requests", async () => {
+    const asked: string[] = [];
+    const fetch: FetchLike = async (url) => {
+      asked.push(new URL(url).host);
+      return Response.json({ message: 'Limit Exceeded' }, { status: 429 });
+    };
+    const out = await aggregate({ role: 'engineer' }, settings({ boards: ['linkedin'] }), ctx({ OPENWEBNINJA_API_KEY: 'a', JSEARCH_API_KEY: 'b', SERPAPI_KEY: 'c' }, fetch), { runtime: 'server' });
+    expect(asked).toEqual(['api.openwebninja.com']);
+    expect(out.jobs).toEqual([]);
+    expect(out.sources).toMatchObject([
+      { sourceId: 'google-jobs', label: 'Google for Jobs (JSearch, OpenWeb Ninja)', ok: false, count: 0, error: "api.openwebninja.com answered 429 (Limit Exceeded): the plan's requests are used up, or they came too fast." },
+    ]);
   });
 
   it('reports why a typed company could not be searched', async () => {
     const out = await aggregate({ role: 'engineer' }, custom, ctx(), { runtime: 'server', discover: async () => undefined });
     expect(out.jobs).toEqual([]);
-    expect(out.sources).toMatchObject([{ sourceId: 'company:acmerobotics', ok: false, count: 0, error: 'needs JSEARCH_API_KEY or SERPAPI_KEY on the server' }]);
+    expect(out.sources).toMatchObject([{ sourceId: 'company:acmerobotics', ok: false, count: 0, error: 'needs OPENWEBNINJA_API_KEY, JSEARCH_API_KEY or SERPAPI_KEY on the server' }]);
   });
 
   it('gives up on a source that does not answer in time, and still returns the rest', async () => {

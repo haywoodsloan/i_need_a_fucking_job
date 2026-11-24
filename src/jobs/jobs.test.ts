@@ -53,12 +53,13 @@ describe('Google for Jobs', () => {
 
   it('builds JSearch queries with remote/radius/date filters', () => {
     const u = new URL(jsearchUrl({ role: 'data analyst', location: 'Chicago, IL', distanceMiles: 25, postedWithinDays: 7 }));
+    expect(u.pathname.endsWith('/search-v2')).toBe(true);
     expect(u.searchParams.get('query')).toBe('data analyst in Chicago, IL');
     expect(u.searchParams.get('radius')).toBe('40');
     expect(u.searchParams.get('date_posted')).toBe('week');
     const r = new URL(jsearchUrl({ role: 'designer', location: 'Chicago, IL', workplace: ['remote'] }));
     expect(r.searchParams.get('query')).toBe('designer');
-    expect(r.searchParams.get('remote_jobs_only')).toBe('true');
+    expect(r.searchParams.get('work_from_home')).toBe('true');
   });
 
   it('normalizes SerpAPI results', () => {
@@ -428,12 +429,16 @@ describe('aggregate', () => {
 
   it('runs selected sources, filters Google results to chosen boards, and reports per-source status', async () => {
     const fetch: FetchLike = async (url) => {
-      if (url.startsWith('https://jsearch')) {
+      if (url.startsWith('https://api.openwebninja.com/jsearch/')) {
         return Response.json({
-          data: [
-            { job_id: '1', job_title: 'Software Engineer', employer_name: 'Globex', job_publisher: 'LinkedIn', job_apply_link: 'https://l/1' },
-            { job_id: '2', job_title: 'Software Engineer II', employer_name: 'Hooli', job_publisher: 'Monster', job_apply_link: 'https://m/2' },
-          ],
+          status: 'OK',
+          data: {
+            jobs: [
+              { job_id: '1', job_title: 'Software Engineer', employer_name: 'Globex', job_publisher: 'LinkedIn', job_apply_link: 'https://l/1' },
+              { job_id: '2', job_title: 'Software Engineer II', employer_name: 'Hooli', job_publisher: 'Monster', job_apply_link: 'https://m/2' },
+            ],
+            cursor: null,
+          },
         });
       }
       if (url.startsWith('https://boards-api.greenhouse.io/v1/boards/airbnb')) {
@@ -444,7 +449,7 @@ describe('aggregate', () => {
     const res = await aggregate(
       { role: 'software engineer' },
       { boards: ['linkedin', 'usajobs'], companies: ['airbnb', 'custom:Duolingo'], industries: [], allowScraping: false },
-      { fetch, env: { JSEARCH_API_KEY: 'k' } },
+      { fetch, env: { OPENWEBNINJA_API_KEY: 'k' } },
       { runtime: 'server', discover: async () => undefined },
     );
     expect(res.jobs.map((j) => j.company).sort()).toEqual(['Airbnb', 'Globex']);

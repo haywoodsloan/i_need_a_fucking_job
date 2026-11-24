@@ -211,14 +211,14 @@ describe('the results', () => {
 
   it('says so when nothing was found, and which sources were not searched at all', async () => {
     const sources = [
-      source({ sourceId: 'google-jobs', label: 'Google for Jobs', ok: false, count: 0, skipped: 'needs JSEARCH_API_KEY or SERPAPI_KEY on the server' }),
+      source({ sourceId: 'google-jobs', label: 'Google for Jobs', ok: false, count: 0, skipped: 'needs OPENWEBNINJA_API_KEY, JSEARCH_API_KEY or SERPAPI_KEY on the server' }),
       source({ sourceId: 'usajobs', label: 'USAJOBS', ok: false, count: 0, skipped: 'needs USAJOBS_API_KEY on the server' }),
     ];
     const { user } = open({ 'POST /api/search': () => found([], sources) });
     await search(user);
 
     expect(await screen.findByText(/No jobs found\./)).toBeInTheDocument();
-    expect(screen.getByText('2 sources were skipped: Google for Jobs (needs JSEARCH_API_KEY or SERPAPI_KEY on the server); USAJOBS (needs USAJOBS_API_KEY on the server).')).toBeInTheDocument();
+    expect(screen.getByText('2 sources were skipped: Google for Jobs (needs OPENWEBNINJA_API_KEY, JSEARCH_API_KEY or SERPAPI_KEY on the server); USAJOBS (needs USAJOBS_API_KEY on the server).')).toBeInTheDocument();
     expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
   });
 

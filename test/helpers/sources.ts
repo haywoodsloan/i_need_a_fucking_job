@@ -10,7 +10,7 @@
  */
 import { amazon, ashby, greenhouse, lever, smartrecruiters, smartrecruitersDetail, workday, workdayDetail, type BoardOpts } from '../../src/jobs/adapters/ats';
 import { remoteok, remotive, usajobs } from '../../src/jobs/adapters/feeds';
-import { jsearch, serpapi } from '../../src/jobs/adapters/googleJobs';
+import { jsearchOpenWebNinja, jsearchRapidApi, serpapi } from '../../src/jobs/adapters/googleJobs';
 import { linkedinDetail, linkedinGuest } from '../../src/jobs/adapters/linkedin';
 import { companyById, type WorkdayBoard } from '../../src/jobs/catalog';
 import type { AdapterContext, JobPosting, JobQuery } from '../../src/jobs/types';
@@ -128,12 +128,20 @@ export const SOURCES: SourcePlan[] = [
     search: (q, ctx) => usajobs.search(q, ctx),
     listPath: ['SearchResult', 'SearchResultItems'],
   },
+  // JSearch has two doors with the same answers: its maker's own site, and RapidAPI. One cassette each.
+  {
+    name: 'openwebninja',
+    sourceId: 'google-jobs',
+    needs: ['OPENWEBNINJA_API_KEY'],
+    search: (q, ctx) => jsearchOpenWebNinja.search(q, ctx),
+    listPath: ['data', 'jobs'],
+  },
   {
     name: 'jsearch',
     sourceId: 'google-jobs',
     needs: ['JSEARCH_API_KEY'],
-    search: (q, ctx) => jsearch.search(q, ctx),
-    listPath: ['data'],
+    search: (q, ctx) => jsearchRapidApi.search(q, ctx),
+    listPath: ['data', 'jobs'],
   },
   {
     name: 'serpapi',

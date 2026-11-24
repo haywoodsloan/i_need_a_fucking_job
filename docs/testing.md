@@ -284,7 +284,9 @@ A green run does not cover these. Each one is a known gap, not an oversight:
 - **The old Indeed route** (`server/src/indeed.ts`). Only its page parser is tested.
 - **The tools run by hand:** `server/src/smoke.ts`, `server/src/check-catalog.ts`, and the command-line part of
   the recorder.
-- **The Google for Jobs and USAJOBS sources against the real services.** They need keys that are not there yet.
+- **The Google for Jobs and USAJOBS sources against the real services.** They need keys, and a key lives only in
+  `server/.env` on the machine that runs the server. [status.md](status.md#not-yet-tried-on-a-real-machine) says
+  whether each has been tried there.
 - **The breached-password lookup against the real service.** It is tested against a stand-in.
 - **Browsers other than Chromium,** and phones.
 - **How the pages look.** There are no picture comparisons. The tests check what is on the page, not where.

@@ -4,17 +4,56 @@
  * more, and each result lists every board it appeared on. This is the main
  * route to the big boards that have no public API.
  *
- * Two interchangeable providers:
- *   - JSearch (RapidAPI): JSEARCH_API_KEY
- *   - SerpAPI:           SERPAPI_KEY
+ * Three interchangeable routes. aggregate.ts uses the first one whose key is set:
+ *   - JSearch from its maker, OpenWeb Ninja:     OPENWEBNINJA_API_KEY
+ *   - JSearch through the RapidAPI marketplace:  JSEARCH_API_KEY
+ *   - SerpAPI:                                   SERPAPI_KEY
+ *
+ * docs/job-sources.md says how to get a key and what a search costs.
  */
-import type { JobListing, JobPosting, JobQuery } from '../types';
-import { getJson, guessWorkplace, iso, normalizePeriod, type Adapter } from './common';
+import type { AdapterContext, JobListing, JobPosting, JobQuery } from '../types';
+import { SourceError, getJson, guessWorkplace, iso, normalizePeriod, type Adapter } from './common';
+
+/**
+ * How many pages of results one search asks for, ten postings to a page. Every page is one request of the plan
+ * that was paid for (or of the free allowance), so this is what a search costs. GOOGLE_JOBS_PAGES changes it.
+ */
+const DEFAULT_PAGES = 2;
+const MAX_PAGES = 20;
+
+function pagesPerSearch(env: AdapterContext['env']): number {
+  const asked = Math.floor(Number(env.GOOGLE_JOBS_PAGES));
+  return asked >= 1 ? Math.min(asked, MAX_PAGES) : DEFAULT_PAGES;
+}
+
+const MAX_ID = 120;
+
+/**
+ * A posting's id, kept to a sensible length. Google's own ids are short, but some answers carry several hundred
+ * characters of encoded details instead, which begin with the job's title and so start alike for two postings
+ * with the same one. Cutting such an id off could give both postings the same id. So the whole id is folded
+ * into a short checksum (cyrb53) that follows the cut.
+ */
+function shortId(id: string): string {
+  if (id.length <= MAX_ID) return id;
+  let a = 0xdeadbeef;
+  let b = 0x41c6ce57;
+  for (let i = 0; i < id.length; i++) {
+    const c = id.charCodeAt(i);
+    a = Math.imul(a ^ c, 2654435761);
+    b = Math.imul(b ^ c, 1597334677);
+  }
+  a = Math.imul(a ^ (a >>> 16), 2246822507) ^ Math.imul(b ^ (b >>> 13), 3266489909);
+  b = Math.imul(b ^ (b >>> 16), 2246822507) ^ Math.imul(a ^ (a >>> 13), 3266489909);
+  return `${id.slice(0, 64)}~${(4294967296 * (2097151 & b) + (a >>> 0)).toString(36)}`;
+}
 
 // ---------------------------------------------------------------- JSearch
 
 interface JSearchJob {
   job_id: string;
+  /** Google's own id for the posting. Newer answers carry it next to a `job_id` of several hundred characters. */
+  job_uid?: string | null;
   job_title: string;
   employer_name: string;
   employer_logo?: string | null;
@@ -22,8 +61,8 @@ interface JSearchJob {
   job_employment_type?: string | null;
   job_apply_link?: string;
   apply_options?: { publisher: string; apply_link: string; is_direct?: boolean }[];
-  job_description?: string;
-  job_is_remote?: boolean;
+  job_description?: string | null;
+  job_is_remote?: boolean | null;
   job_posted_at_datetime_utc?: string | null;
   job_location?: string | null;
   job_city?: string | null;
@@ -36,6 +75,41 @@ interface JSearchJob {
   job_google_link?: string;
 }
 
+/** What `/search-v2` answers. The service's older search answered with the list itself as `data`. */
+interface JSearchAnswer {
+  status?: string;
+  error?: { message?: string; code?: number };
+  data?: { jobs?: JSearchJob[]; cursor?: string | null } | JSearchJob[];
+}
+
+/**
+ * JSearch is one service with two doors: its maker, OpenWeb Ninja, sells it on its own site and through the
+ * RapidAPI marketplace. Both serve the same endpoints, parameters and answers. They differ in the address, in the
+ * header that carries the key, and in which account the key belongs to.
+ */
+interface JSearchDoor {
+  base: string;
+  /** The setting that holds this door's key. */
+  setting: string;
+  headers(key: string): Record<string, string>;
+  /** What to check when the door turns the key down. */
+  whenRefused: string;
+}
+
+const OPENWEB_NINJA: JSearchDoor = {
+  base: 'https://api.openwebninja.com/jsearch',
+  setting: 'OPENWEBNINJA_API_KEY',
+  headers: (key) => ({ 'x-api-key': key }),
+  whenRefused: 'Check the key, that its account has a plan for JSearch (the free one counts), and that the plan has requests left this month.',
+};
+
+const RAPIDAPI: JSearchDoor = {
+  base: 'https://jsearch.p.rapidapi.com',
+  setting: 'JSEARCH_API_KEY',
+  headers: (key) => ({ 'X-RapidAPI-Key': key, 'X-RapidAPI-Host': 'jsearch.p.rapidapi.com' }),
+  whenRefused: 'Check the key, and that its RapidAPI account is subscribed to JSearch with requests left this month. A key from openwebninja.com belongs in OPENWEBNINJA_API_KEY.',
+};
+
 const JSEARCH_DATE: [number, string][] = [
   [1, 'today'],
   [3, '3days'],
@@ -43,17 +117,17 @@ const JSEARCH_DATE: [number, string][] = [
   [31, 'month'],
 ];
 
-export function jsearchUrl(q: JobQuery, page = 1): string {
+export function jsearchUrl(q: JobQuery, base = OPENWEB_NINJA.base, pages = DEFAULT_PAGES): string {
   const remoteOnly = q.workplace?.length === 1 && q.workplace[0] === 'remote';
   const query = [q.role, q.location && !remoteOnly ? `in ${q.location}` : ''].filter(Boolean).join(' ');
-  const p = new URLSearchParams({ query, page: String(page), num_pages: '2' });
-  if (remoteOnly) p.set('remote_jobs_only', 'true');
+  const p = new URLSearchParams({ query, num_pages: String(pages) });
+  if (remoteOnly) p.set('work_from_home', 'true');
   if (q.distanceMiles && q.location && !remoteOnly) p.set('radius', String(Math.round(q.distanceMiles * 1.609)));
   if (q.postedWithinDays) {
     const d = JSEARCH_DATE.find(([n]) => q.postedWithinDays! <= n);
     p.set('date_posted', d ? d[1] : 'all');
   }
-  return `https://jsearch.p.rapidapi.com/search?${p}`;
+  return `${base}/search-v2?${p}`;
 }
 
 export function normalizeJSearch(j: JSearchJob): JobPosting {
@@ -68,7 +142,7 @@ export function normalizeJSearch(j: JSearchJob): JobPosting {
   for (const o of j.apply_options ?? []) push(o.publisher, o.apply_link);
   const location = j.job_location ?? ([j.job_city, j.job_state].filter(Boolean).join(', ') || j.job_country || undefined);
   return {
-    id: `google-jobs:${j.job_id}`,
+    id: `google-jobs:${shortId(String(j.job_uid || j.job_id))}`,
     title: j.job_title,
     company: j.employer_name,
     companyLogo: j.employer_logo ?? undefined,
@@ -85,22 +159,59 @@ export function normalizeJSearch(j: JSearchJob): JobPosting {
             period: normalizePeriod(j.job_salary_period),
           }
         : undefined,
-    descriptionText: j.job_description,
+    descriptionText: j.job_description ?? undefined,
     listings,
   };
 }
 
-export const jsearch: Adapter = {
-  id: 'google-jobs',
-  label: 'Google for Jobs (JSearch)',
-  requires: ['JSEARCH_API_KEY'],
-  async search(q, ctx) {
-    const data = await getJson<{ data: JSearchJob[] }>(ctx, jsearchUrl(q, q.page ?? 1), {
-      headers: { 'X-RapidAPI-Key': ctx.env.JSEARCH_API_KEY!, 'X-RapidAPI-Host': 'jsearch.p.rapidapi.com' },
-    });
-    return (data.data ?? []).map(normalizeJSearch);
-  },
-};
+/**
+ * What the service said went wrong, in its own words and kept short, for the sentence shown with the search results.
+ * The service's own errors carry `error.message`. The gateway in front of either door answers with a bare `message`.
+ * Should the words repeat the key, it is taken out: the results are shown to everyone who uses this server.
+ */
+function itsWords(body: unknown, key: string): string {
+  const b = body as { message?: unknown; error?: { message?: unknown } } | null;
+  const said = [b?.error?.message, b?.message].find((m): m is string => typeof m === 'string' && m.trim() !== '');
+  if (!said) return '';
+  return ` (${(key ? said.split(key).join('…') : said).trim().slice(0, 200)})`;
+}
+
+/** Why a door did not answer: the status, the service's words and, for a key that was turned down, the setting to look at. */
+function refusal(door: JSearchDoor, status: number, words: string): string {
+  const answered = `${new URL(door.base).host} answered ${status}${words}`;
+  if (status === 401 || status === 403) return `${answered}: it did not accept the key in ${door.setting}. ${door.whenRefused}`;
+  if (status === 429) return `${answered}: the plan's requests are used up, or they came too fast.`;
+  return answered;
+}
+
+/** A key is plain printable text. Anything else is a copying accident, and whatever sends the request would quote it in its complaint. */
+const PLAIN_TEXT = /^[\x21-\x7e]+$/;
+
+function jsearchThrough(door: JSearchDoor, label: string): Adapter {
+  return {
+    id: 'google-jobs',
+    label,
+    requires: [door.setting],
+    async search(q, ctx) {
+      const key = (ctx.env[door.setting] ?? '').trim();
+      if (!PLAIN_TEXT.test(key)) throw new SourceError(`The key in ${door.setting} cannot be sent as it is: it is empty, or it holds a space, a line break or a character that is not plain text. Copy it in again.`);
+      // The key travels in a header, never in the address, so it stays out of caches, logs and recordings.
+      const res = await ctx.fetch(jsearchUrl(q, door.base, pagesPerSearch(ctx.env)), { headers: door.headers(key), signal: ctx.signal });
+      if (!res.ok) throw new SourceError(refusal(door, res.status, itsWords(await res.json().catch(() => null), key)), res.status);
+      const answer = (await res.json()) as JSearchAnswer;
+      if (answer.status && answer.status !== 'OK') {
+        const code = answer.error?.code;
+        throw new SourceError(`${new URL(door.base).host} answered with an error${itsWords(answer, key)}`, typeof code === 'number' ? code : undefined);
+      }
+      const jobs = Array.isArray(answer.data) ? answer.data : answer.data?.jobs;
+      // A posting with no id, title or employer cannot be shown, or told apart from its neighbours, so it is left out.
+      return (jobs ?? []).filter((j) => j && j.job_title && j.employer_name && (j.job_uid || j.job_id)).map(normalizeJSearch);
+    },
+  };
+}
+
+export const jsearchOpenWebNinja = jsearchThrough(OPENWEB_NINJA, 'Google for Jobs (JSearch, OpenWeb Ninja)');
+export const jsearchRapidApi = jsearchThrough(RAPIDAPI, 'Google for Jobs (JSearch, RapidAPI)');
 
 // ---------------------------------------------------------------- SerpAPI
 
@@ -139,7 +250,7 @@ export function normalizeSerp(j: SerpJob, now = Date.now()): JobPosting {
   if (!listings.length && j.via) listings.push({ sourceId: 'google-jobs', via: j.via.replace(/^via\s+/i, ''), url: j.share_link ?? '' });
   const ext = j.detected_extensions ?? {};
   return {
-    id: `google-jobs:${j.job_id.slice(0, 120)}`,
+    id: `google-jobs:${shortId(j.job_id)}`,
     title: j.title,
     company: j.company_name,
     companyLogo: j.thumbnail,
@@ -170,8 +281,9 @@ export const serpapi: Adapter = {
   async search(q, ctx) {
     const out: JobPosting[] = [];
     let token: string | undefined;
-    // Two pages (~20 jobs) per search keeps API usage predictable.
-    for (let i = 0; i < 2; i++) {
+    // Each page is a separate request, and one search of the plan.
+    const pages = pagesPerSearch(ctx.env);
+    for (let i = 0; i < pages; i++) {
       const data = await getJson<{ jobs_results?: SerpJob[]; serpapi_pagination?: { next_page_token?: string } }>(
         ctx,
         serpUrl(q, ctx.env.SERPAPI_KEY!, token),

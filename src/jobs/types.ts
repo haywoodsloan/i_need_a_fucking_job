@@ -8,7 +8,6 @@ export interface JobQuery {
   /** Empty = any. */
   workplace?: Workplace[];
   postedWithinDays?: number;
-  page?: number;
 }
 
 export interface Salary {

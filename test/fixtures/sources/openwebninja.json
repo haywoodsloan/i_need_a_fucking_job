@@ -1,0 +1,219 @@
+{
+  "source": "openwebninja",
+  "origin": "handwritten",
+  "date": "2026-11-24",
+  "note": "Handwritten from the /search-v2 answer OpenWeb Ninja documents for JSearch (its OpenAPI description, read on 2026-11-24) and the fields the adapter reads. This is JSearch asked at its maker's own address (OPENWEBNINJA_API_KEY). The first two postings carry what newer answers do: a job_id several hundred characters long next to a short job_uid. The companies \"Fabrikam Freight\", \"Tailspin Health\" and \"Wingtip Avionics\" and every posting are made up. It exercises the code, but it cannot notice the live service changing: replace it with a recording (npm run fixtures:record -- openwebninja) from a machine that can reach the service.",
+  "search": {
+    "query": {
+      "role": "software engineer",
+      "location": "Austin, TX",
+      "distanceMiles": 25
+    },
+    "env": {
+      "OPENWEBNINJA_API_KEY": "REDACTED"
+    }
+  },
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "url": "https://api.openwebninja.com/jsearch/search-v2?query=software+engineer+in+Austin%2C+TX&num_pages=2&radius=40"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "json": {
+          "status": "OK",
+          "request_id": "00000000-0000-4000-8000-000000000001",
+          "parameters": {
+            "query": "software engineer in austin, tx",
+            "page": 1,
+            "num_pages": 2,
+            "date_posted": "all",
+            "country": "us",
+            "language": "en"
+          },
+          "data": {
+            "jobs": [
+              {
+                "job_id": "sAmPlE-long-id-software-engineer-in-austin-tx-software-engineer-in-austin-tx-software-engineer-in-austin-tx-software-engineer-in-austin-tx-software-engineer-in-austin-tx-software-engineer-in-austin-tx-software-engineer-in-austin-tx-software-engineer-in-austin-tx-software-engineer-in-austin-tx-0001",
+                "job_uid": "sAmPlE_owninja_0001AAAAAA==",
+                "job_title": "Software Engineer, Routing",
+                "employer_name": "Fabrikam Freight",
+                "employer_logo": "https://encrypted-tbn0.gstatic.com/images?q=tbn:sample-fabrikam&s=0",
+                "employer_website": "https://www.fabrikam-freight.example",
+                "job_publisher": "Fabrikam Freight Careers",
+                "job_employment_type": "Full-time",
+                "job_employment_types": [
+                  "FULLTIME"
+                ],
+                "job_apply_link": "https://careers.fabrikam-freight.example/jobs/R-10432?utm_campaign=google_jobs_apply&utm_source=google_jobs_apply&utm_medium=organic",
+                "job_apply_is_direct": false,
+                "apply_options": [
+                  {
+                    "publisher": "Fabrikam Freight Careers",
+                    "apply_link": "https://careers.fabrikam-freight.example/jobs/R-10432?utm_campaign=google_jobs_apply&utm_source=google_jobs_apply&utm_medium=organic",
+                    "is_direct": false
+                  },
+                  {
+                    "publisher": "LinkedIn",
+                    "apply_link": "https://www.linkedin.com/jobs/view/software-engineer-routing-at-fabrikam-freight-4100000002?utm_campaign=google_jobs_apply&utm_source=google_jobs_apply&utm_medium=organic",
+                    "is_direct": false
+                  },
+                  {
+                    "publisher": "Indeed",
+                    "apply_link": "https://www.indeed.com/viewjob?jk=fedcba9876543210&utm_campaign=google_jobs_apply&utm_source=google_jobs_apply&utm_medium=organic",
+                    "is_direct": true
+                  },
+                  {
+                    "publisher": "ZipRecruiter",
+                    "apply_link": "https://www.ziprecruiter.com/c/Fabrikam-Freight/Job/Software-Engineer,-Routing/-in-Austin,TX?jid=0123456789abcdef&utm_campaign=google_jobs_apply&utm_source=google_jobs_apply&utm_medium=organic",
+                    "is_direct": false
+                  },
+                  {
+                    "publisher": "Built In",
+                    "apply_link": "https://builtin.com/job/software-engineer-routing/4000001?utm_campaign=google_jobs_apply&utm_source=google_jobs_apply&utm_medium=organic",
+                    "is_direct": false
+                  }
+                ],
+                "job_description": "Fabrikam Freight plans and tracks truck freight for mid-sized shippers. The routing team owns the service that decides which truck takes which load.\n\nWhat you will do\n• Build and run Go services that plan several thousand routes an hour\n• Work with dispatchers to turn what they know into rules the planner can use\n• Take part in an on-call rotation of six engineers\n\nWhat we look for\n• 3+ years building backend services\n• Experience with PostgreSQL and a message queue",
+                "job_is_remote": false,
+                "job_posted_at": "5 days ago",
+                "job_posted_at_timestamp": 1794960000,
+                "job_posted_at_datetime_utc": "2026-11-18T00:00:00.000Z",
+                "job_location": "Austin, TX",
+                "job_city": "Austin",
+                "job_state": "Texas",
+                "job_country": "US",
+                "job_latitude": 30.267153,
+                "job_longitude": -97.7430608,
+                "job_benefits": [
+                  "health_insurance",
+                  "paid_time_off",
+                  "retirement_savings"
+                ],
+                "job_benefits_strings": null,
+                "job_google_link": "https://www.google.com/search?q=jobs&gl=us&hl=en&udm=8#vhid=vt%3D20/docid%3DsAmPlE_owninja_0001AAAAAA%3D%3D&vssid=jobs-detail-viewer",
+                "job_salary": null,
+                "job_salary_string": "$140K–$175K a year",
+                "job_min_salary": 140000,
+                "job_max_salary": 175000,
+                "job_salary_period": "YEAR",
+                "job_highlights": {
+                  "Qualifications": [
+                    "3+ years building backend services",
+                    "Experience with PostgreSQL and a message queue"
+                  ],
+                  "Responsibilities": [
+                    "Build and run Go services that plan several thousand routes an hour",
+                    "Take part in an on-call rotation of six engineers"
+                  ]
+                },
+                "job_onet_soc": "15113200",
+                "job_onet_job_zone": "4",
+                "employer_reviews": null
+              },
+              {
+                "job_id": "sAmPlE-long-id-software-engineer-in-austin-tx-software-engineer-in-austin-tx-software-engineer-in-austin-tx-software-engineer-in-austin-tx-software-engineer-in-austin-tx-software-engineer-in-austin-tx-software-engineer-in-austin-tx-software-engineer-in-austin-tx-software-engineer-in-austin-tx-0002",
+                "job_uid": "sAmPlE_owninja_0002AAAAAA==",
+                "job_title": "Senior Software Engineer (Remote)",
+                "employer_name": "Tailspin Health",
+                "employer_logo": null,
+                "employer_website": null,
+                "job_publisher": "Dice",
+                "job_employment_type": "Contractor",
+                "job_employment_types": [
+                  "CONTRACTOR"
+                ],
+                "job_apply_link": "https://www.dice.com/job-detail/00000000-0000-4000-8000-000000000002?utm_campaign=google_jobs_apply&utm_source=google_jobs_apply&utm_medium=organic",
+                "job_apply_is_direct": true,
+                "apply_options": [
+                  {
+                    "publisher": "Dice",
+                    "apply_link": "https://www.dice.com/job-detail/00000000-0000-4000-8000-000000000002?utm_campaign=google_jobs_apply&utm_source=google_jobs_apply&utm_medium=organic",
+                    "is_direct": true
+                  },
+                  {
+                    "publisher": "Glassdoor",
+                    "apply_link": "https://www.glassdoor.com/job-listing/senior-software-engineer-tailspin-health-JV_KO0,24_KE25,40.htm?jl=1000000000002&utm_campaign=google_jobs_apply&utm_source=google_jobs_apply&utm_medium=organic",
+                    "is_direct": false
+                  }
+                ],
+                "job_description": "Twelve month contract on the team that moves patient scheduling off a mainframe. Remote within the United States, with working hours on Central time.\n\n• TypeScript and Node.js services on AWS\n• Pair with the nurses who use the scheduler every day",
+                "job_is_remote": true,
+                "job_posted_at": "2 days ago",
+                "job_posted_at_timestamp": 1795219200,
+                "job_posted_at_datetime_utc": "2026-11-21T00:00:00.000Z",
+                "job_location": "Anywhere",
+                "job_city": null,
+                "job_state": null,
+                "job_country": "US",
+                "job_latitude": null,
+                "job_longitude": null,
+                "job_benefits": null,
+                "job_benefits_strings": null,
+                "job_google_link": "https://www.google.com/search?q=jobs&gl=us&hl=en&udm=8#vhid=vt%3D20/docid%3DsAmPlE_owninja_0002AAAAAA%3D%3D&vssid=jobs-detail-viewer",
+                "job_salary": null,
+                "job_salary_string": "$70–$85 an hour",
+                "job_min_salary": 70,
+                "job_max_salary": 85,
+                "job_salary_period": "HOUR",
+                "job_highlights": {},
+                "job_onet_soc": "15113200",
+                "job_onet_job_zone": "4",
+                "employer_reviews": null
+              },
+              {
+                "job_id": "sAmPlE_owninja_0003AAAAAA==",
+                "job_title": "Embedded Software Engineer",
+                "employer_name": "Wingtip Avionics",
+                "employer_logo": null,
+                "employer_website": "https://www.wingtip-avionics.example",
+                "job_publisher": "LinkedIn",
+                "job_employment_type": "Full-time",
+                "job_employment_types": [
+                  "FULLTIME"
+                ],
+                "job_apply_link": "https://www.linkedin.com/jobs/view/embedded-software-engineer-at-wingtip-avionics-4100000003?utm_campaign=google_jobs_apply&utm_source=google_jobs_apply&utm_medium=organic",
+                "job_apply_is_direct": false,
+                "apply_options": [
+                  {
+                    "publisher": "LinkedIn",
+                    "apply_link": "https://www.linkedin.com/jobs/view/embedded-software-engineer-at-wingtip-avionics-4100000003?utm_campaign=google_jobs_apply&utm_source=google_jobs_apply&utm_medium=organic",
+                    "is_direct": false
+                  }
+                ],
+                "job_description": "Write and test flight display software in C for small aircraft, to DO-178C. On site in Round Rock four days a week.",
+                "job_is_remote": false,
+                "job_posted_at": "9 days ago",
+                "job_posted_at_timestamp": 1794614400,
+                "job_posted_at_datetime_utc": "2026-11-14T00:00:00.000Z",
+                "job_location": null,
+                "job_city": "Round Rock",
+                "job_state": "Texas",
+                "job_country": "US",
+                "job_latitude": 30.5082551,
+                "job_longitude": -97.678896,
+                "job_benefits": null,
+                "job_benefits_strings": null,
+                "job_google_link": "https://www.google.com/search?q=jobs&gl=us&hl=en&udm=8#vhid=vt%3D20/docid%3DsAmPlE_owninja_0003AAAAAA%3D%3D&vssid=jobs-detail-viewer",
+                "job_salary": null,
+                "job_salary_string": null,
+                "job_min_salary": null,
+                "job_max_salary": null,
+                "job_salary_period": null,
+                "job_highlights": {},
+                "job_onet_soc": "15113200",
+                "job_onet_job_zone": "4",
+                "employer_reviews": null
+              }
+            ],
+            "cursor": "eyJwYWdlIjozfQ=="
+          }
+        }
+      }
+    }
+  ]
+}

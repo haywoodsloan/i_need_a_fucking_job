@@ -66,7 +66,7 @@ accounts at all (`ACCOUNTS_ENABLED`).
 | `types.ts` | The shapes everything shares: `JobQuery`, `SearchSettings`, `JobPosting`, `JobListing`, `SourceStatus`, `SearchResponse`, and `AdapterContext` (`fetch`, `env`, `signal`), which is how a source reaches the network. |
 | `adapters/ats.ts` | Hiring systems: Greenhouse, Lever, Ashby, SmartRecruiters, Workday, Amazon. |
 | `adapters/feeds.ts` | USAJOBS, Remotive, Remote OK. |
-| `adapters/googleJobs.ts` | Google for Jobs through JSearch or SerpAPI. |
+| `adapters/googleJobs.ts` | Google for Jobs through one of three services: JSearch from its maker (OpenWeb Ninja), JSearch through RapidAPI, or SerpAPI. |
 | `adapters/linkedin.ts`, `adapters/indeed.ts` | LinkedIn's public pages, and the parser for an Indeed results page. |
 | `adapters/common.ts` | What sources share: reading JSON, HTML to text, places, dates, `SourceError`, `BlockedError`. |
 | `aggregate.ts` | `planSearch` picks the sources for a search. `aggregate` runs them side by side, each with a time limit and a status of its own. `mergeJobs` folds the same job from several boards into one. |

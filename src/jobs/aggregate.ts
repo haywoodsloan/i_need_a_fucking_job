@@ -8,7 +8,7 @@ import { COMPANIES, companyById, isCustomCompany, type CompanyDef } from './cata
 import { amazon, ashby, greenhouse, lever, smartrecruiters, workday } from './adapters/ats';
 import { BlockedError, type Adapter } from './adapters/common';
 import { remoteok, remotive, usajobs } from './adapters/feeds';
-import { jsearch, serpapi } from './adapters/googleJobs';
+import { jsearchOpenWebNinja, jsearchRapidApi, serpapi } from './adapters/googleJobs';
 import { linkedinGuest } from './adapters/linkedin';
 import type { AdapterContext, JobPosting, JobQuery, SearchResponse, SearchSettings, SourceStatus } from './types';
 
@@ -40,10 +40,13 @@ function missing(a: Adapter, ctx: AdapterContext): string | undefined {
   return need.length ? `needs ${need.join(', ')} on the server` : undefined;
 }
 
+/** The services that read Google for Jobs, most preferred first. A search uses the first one whose key is set. */
+const GOOGLE_JOBS: Adapter[] = [jsearchOpenWebNinja, jsearchRapidApi, serpapi];
+const GOOGLE_JOBS_KEYS = GOOGLE_JOBS.flatMap((a) => a.requires ?? []);
+const NO_GOOGLE_JOBS_KEY = `needs ${GOOGLE_JOBS_KEYS.slice(0, -1).join(', ')} or ${GOOGLE_JOBS_KEYS[GOOGLE_JOBS_KEYS.length - 1]} on the server`;
+
 export function googleJobsAdapter(ctx: AdapterContext): Adapter | undefined {
-  if (ctx.env.JSEARCH_API_KEY) return jsearch;
-  if (ctx.env.SERPAPI_KEY) return serpapi;
-  return undefined;
+  return GOOGLE_JOBS.find((a) => !missing(a, ctx));
 }
 
 function companyTask(c: Pick<CompanyDef, 'name' | 'platform' | 'board' | 'workday'>, q: JobQuery, ctx: AdapterContext, o: AggregateOptions): Task {
@@ -71,7 +74,7 @@ function companyTask(c: Pick<CompanyDef, 'name' | 'platform' | 'board' | 'workda
     case 'google-jobs':
     default: {
       const g = onServer ? googleJobsAdapter(ctx) : undefined;
-      if (!g) return serverOnly(onServer ? 'needs JSEARCH_API_KEY or SERPAPI_KEY on the server' : undefined);
+      if (!g) return serverOnly(onServer ? NO_GOOGLE_JOBS_KEY : undefined);
       return { sourceId: sid, label: `${c.name} (Google for Jobs)`, employer: c.name, run: () => g.search({ ...q, role: `${q.role} ${c.name}` }, ctx) };
     }
   }
@@ -90,7 +93,7 @@ export function planSearch(q: JobQuery, s: SearchSettings, ctx: AdapterContext, 
       sourceId: 'google-jobs',
       label: g?.label ?? 'Google for Jobs',
       run: () => g!.search(q, ctx),
-      skipped: !onServer ? 'runs on the backend' : g ? undefined : 'needs JSEARCH_API_KEY or SERPAPI_KEY on the server',
+      skipped: !onServer ? 'runs on the backend' : g ? undefined : NO_GOOGLE_JOBS_KEY,
       boardFilter: new Set(viaGoogle),
     });
   }

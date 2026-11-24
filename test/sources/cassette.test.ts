@@ -154,6 +154,6 @@ describe('recording a source', () => {
   });
 
   it('has a cassette on file for every source in the table', () => {
-    expect(SOURCES.map((s) => s.name)).toEqual(['greenhouse', 'lever', 'ashby', 'smartrecruiters', 'workday', 'amazon', 'remotive', 'remoteok', 'usajobs', 'jsearch', 'serpapi', 'linkedin']);
+    expect(SOURCES.map((s) => s.name)).toEqual(['greenhouse', 'lever', 'ashby', 'smartrecruiters', 'workday', 'amazon', 'remotive', 'remoteok', 'usajobs', 'openwebninja', 'jsearch', 'serpapi', 'linkedin']);
   });
 });
