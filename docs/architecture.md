@@ -47,7 +47,7 @@ Two things in this picture are unusual and matter for every change:
 
 A change has to work in all three.
 
-| | Public demo | On the laptop | Served by the server |
+| | Public demo | On Sloan's computer | Served by the server |
 | --- | --- | --- | --- |
 | Started by | CI, on a push to `main` | `npm run local` | `npm run local:built`, and a hosted copy later |
 | The app comes from | GitHub Pages (static files) | Vite's dev server, port 5173 | The server itself, port 8787, with the security headers |
@@ -56,6 +56,10 @@ A change has to work in all three.
 
 `src/jobs/client.ts` decides where a search goes. `src/account/client.ts` decides whether the app looks for
 accounts at all (`ACCOUNTS_ENABLED`).
+
+Sloan's computer is a Windows desktop since 2026-11-24. It was a Windows laptop before. The
+[plan](applications-plan.md), the decision records and the older entries of the work log still call it "the
+laptop".
 
 ## The code
 

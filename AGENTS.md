@@ -12,7 +12,7 @@ checked fields, sign in. Tracking and sending applications come next ([docs/stat
 
 - **Frontend:** React and Vite, in `src/`. A static copy runs on GitHub Pages as a demo.
 - **Server:** Node 22 with no web framework, in `server/`. It holds API keys, reaches job sources a browser cannot,
-  and runs accounts. Sloan runs it on a Windows laptop with `npm run local`.
+  and runs accounts. Sloan runs it on their own Windows computer with `npm run local`.
 
 ## Rules that do not bend
 
@@ -34,11 +34,11 @@ and what the rule leaves room for.
    gitignored. A recorded fixture never holds a key. A test never writes to `server/.env`.
 6. **Tests never touch the live network.** A guard fails any test that tries
    ([0016](docs/decisions/0016-how-the-code-is-tested.md)).
-7. **It runs on Windows and on Linux.** Sloan's laptop is Windows, CI and hosting are Linux. CI checks both.
+7. **It runs on Windows and on Linux.** Sloan's computer is Windows, CI and hosting are Linux. CI checks both.
 8. **Work goes straight to `main`, without pull requests.** A push to `main` deploys the demo, so run
    `npm run check` first ([0004](docs/decisions/0004-work-lands-on-main-without-pull-requests.md)).
 
-Only Sloan decides: spending money, API keys, installing software on the laptop, and the open questions in
+Only Sloan decides: spending money, API keys, installing software on Sloan's computer, and the open questions in
 [docs/status.md](docs/status.md#waiting-on-sloan).
 
 ## Map
@@ -72,8 +72,8 @@ Run from the repository root. Node 22.12 or newer.
 | `npm run test:e2e` | The built app in a real browser. Needs a browser ([docs/testing.md](docs/testing.md#in-a-real-browser)). |
 | `npm run typecheck` | Type check only. |
 | `npm run admin -- <command>` | Account commands: `setup`, `invite`, `reset`, `users`, `sign-out`. |
-| `npm run fixtures:record` | Re-record what job sources answer, for the tests. Only works where the job sites can be reached, which is usually the laptop. |
-| `npm run smoke --prefix server` | Live check of every source. Laptop only, for the same reason. |
+| `npm run fixtures:record` | Re-record what job sources answer, for the tests. Only works where the job sites can be reached, which is usually Sloan's computer. |
+| `npm run smoke --prefix server` | Live check of every source. Sloan's computer only, for the same reason. |
 
 ## Before you call a change done
 
@@ -86,7 +86,7 @@ Run from the repository root. Node 22.12 or newer.
    - [docs/status.md](docs/status.md): what is built, what is next, what waits on Sloan, known gaps.
    - A new file in [docs/decisions/](docs/decisions/README.md) if you chose between real alternatives, or Sloan did.
    - The topic doc, if behaviour it describes changed.
-4. Tell Sloan what they have to do on the laptop, if anything: `git pull`, an install, a setting.
+4. Tell Sloan what has to be done on their computer, if anything: `git pull`, an install, a setting.
 
 ## Where to read more
 

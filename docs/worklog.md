@@ -21,6 +21,40 @@ The shape of an entry:
 **Commits:** short hashes, when the entry is written after them.
 ```
 
+## 2026-11-24: The OpenWeb Ninja key works, and the server runs on Sloan's desktop
+
+**Asked for:** nothing new. This is the first run with a real key that the entry below left open, and the docs
+brought up to date after it.
+
+**Changed:** only the docs.
+
+- **The route works.** The key went into `server/.env` on Sloan's computer, and the first real search brought 20
+  postings through Google for Jobs in about 4 seconds. `/api/health` names the service in use.
+  [job-sources.md](job-sources.md#verification-status) has it in the table of what was seen live, and
+  [status.md](status.md#not-yet-tried-on-a-real-machine) no longer lists the route as never run.
+- **Sloan's computer is a desktop now.** Sloan moved to it on 2026-11-24 and the repository was cloned fresh
+  there. The docs said "the laptop" for the machine that runs the server. `AGENTS.md`, status.md, testing.md,
+  job-sources.md and architecture.md now say "Sloan's computer". The plan, the decision records and the older
+  entries here keep the old word, and [architecture.md](architecture.md#three-ways-it-runs) says so.
+- **Row 1 of what waits on Sloan** is now the USAJOBS key, and what should happen when the free requests run out.
+
+**Found on the way:**
+
+- **Workday turned the server away in that first search.** All eight catalog companies on Workday were answered
+  429 with a bot check and reported as blocked. On 2026-11-16 they answered. Nobody has looked into why. One
+  thing was different that day: Workday career pages were also being read from a browser on Sloan's side, for
+  the job hunt itself. Whether that is the reason is not known.
+- **The desktop has Node 24.** The checks run on Node 22. The search server ran there without trouble.
+- **The free allowance goes fast in real use.** About 14 searches on the first evening come to an estimated 28
+  of the month's 200 requests.
+
+**Left open:**
+
+- Workday, as above ([status.md](status.md#known-gaps)).
+- What to do when the 200 requests are used up ([status.md](status.md#waiting-on-sloan), row 1).
+- The RapidAPI door and SerpAPI have still never run with a key, and `npm run smoke --prefix server` has not
+  been run on the desktop ([status.md](status.md#not-yet-tried-on-a-real-machine)).
+
 ## 2026-11-24: Google for Jobs through a JSearch key from OpenWeb Ninja
 
 **Asked for:** Sloan: "RapidAPI isn't working right, it gives me an error when I try to setup and account. We need

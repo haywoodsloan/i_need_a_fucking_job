@@ -47,12 +47,12 @@ the question.
 
 | # | What | Why it matters | Recommended |
 | --- | --- | --- | --- |
-| 1 | **Try the Google for Jobs key on the laptop, and get a USAJOBS key.** Sloan has a JSearch key from OpenWeb Ninja since 2026-11-24. It goes into `server/.env` as `OPENWEBNINJA_API_KEY`. Then `git pull`, start the server again, and run `npm run smoke --prefix server` ([the steps](job-sources.md#getting-an-openweb-ninja-key)). | Without the Google key, listings from LinkedIn, Indeed, Glassdoor and ZipRecruiter mostly do not arrive. The route was written from the service's description and has never run with a key, so this first run is its real test. USAJOBS has never run against the real service either. `server/.env.example` names the settings. | Stay on JSearch's free plan to start: 200 requests a month, up to 2 for a search ([what a search costs](job-sources.md#what-a-search-costs)). The USAJOBS key is free. |
+| 1 | **Get a USAJOBS key, and say what should happen when the free Google for Jobs requests run out.** The JSearch key from OpenWeb Ninja is in `server/.env` on Sloan's computer and works since 2026-11-24. Its free plan stops at 200 requests a month, and a search uses up to 2 ([what a search costs](job-sources.md#what-a-search-costs)). | USAJOBS has never run against the real service. When the 200 are used up, listings from LinkedIn, Indeed, Glassdoor and ZipRecruiter stop arriving until the next month, and every other source carries on. | The USAJOBS key is free. For JSearch, `GOOGLE_JOBS_PAGES=1` halves what a search uses and costs nothing. A paid plan is Sloan's call. |
 | 2 | **Decisions 2 to 7 of the plan** ([the table](applications-plan.md#2-decisions-for-sloan)): who presses Submit, a domain, forgotten passwords and stored logins, whether data may leave the browser, whether AI may suggest wording, hosting a small model | Step 1 needs decision 5. Step 2 needs 2. Step 4 needs 3. Step A needs 5, 6 and 7. Step 0 was built on the recommended answer to 4. | The default written next to each one in the plan |
 | 3 | **Delete the old Indeed route?** `server/src/indeed.ts` loads Indeed in a browser that hides that it is automated. | It goes against rule 2 ([0007](decisions/0007-no-bot-check-bypass.md)). It is off unless `ENABLE_PLAYWRIGHT` is set, and nothing tests it. | Delete it, and the "Direct site access" wording for Indeed with it. Indeed listings still arrive through Google for Jobs. |
-| 4 | **Try accounts on the laptop:** `git pull`, both installs, then `npm run admin -- setup you@example.com` | The account tests pass on Windows in CI, but nobody has used sign-in on a real Windows machine yet. | |
-| 5 | **Record real answers from the job sites** on the laptop: `npm run fixtures:record`, read the diff, commit | Every recording the tests replay was typed by hand ([testing.md](testing.md#recorded-answers-from-job-sources)). Real ones would catch a site that changed. | Do it once the keys are in, so the keyed sources are recorded too. |
-| 6 | **Run the browser tests on the laptop** with Edge: `$env:BROWSER_CHANNEL='msedge'; npm run test:e2e` | They pass in CI on Windows with Playwright's Chromium. Edge on the laptop needs no download. | |
+| 4 | **Try accounts on Sloan's computer:** `git pull`, both installs, then `npm run admin -- setup you@example.com` | The account tests pass on Windows in CI, but nobody has used sign-in on a real Windows machine yet. | |
+| 5 | **Record real answers from the job sites** on Sloan's computer: `npm run fixtures:record`, read the diff, commit | Every recording the tests replay was typed by hand ([testing.md](testing.md#recorded-answers-from-job-sources)). Real ones would catch a site that changed. | The Google for Jobs key is in, so this can be done now. It uses 2 of the month's requests. USAJOBS is skipped until it has a key, and can be recorded then. |
+| 6 | **Run the browser tests on Sloan's computer** with Edge: `$env:BROWSER_CHANNEL='msedge'; npm run test:e2e` | They pass in CI on Windows with Playwright's Chromium. Edge is already on a Windows machine and needs no download. | |
 
 ## Known gaps
 
@@ -78,6 +78,10 @@ asking, with a test first. Take one out of this list in the commit that fixes it
   ([what a search costs](job-sources.md#what-a-search-costs)). On a plan that stops at 200 requests that adds up
   fast. Those searches also go out side by side, which a plan with a limit per second may refuse.
 - `htmlToText` leaves an empty line between the items of a list (`src/jobs/adapters/common.ts`).
+- Workday turned the server away as automated traffic in the first search from Sloan's desktop, on 2026-11-24:
+  all eight catalog companies on Workday, each with a 429. They answered on 2026-11-16. Nobody has looked into
+  why, or into whether it happens on every search. Rule 2 stands whatever the reason: a bot check is reported and
+  not worked around ([what was seen live](job-sources.md#verification-status)).
 
 **Resume** (`src/resume/`)
 
@@ -117,7 +121,10 @@ Built and tested with stand-ins, never yet run for real:
 - The breached-password lookup against the real service. To check: try to create an account with
   `password1234567`. It should be refused.
 - The fixture recorder against the live job sites (row 5 above).
-- Google for Jobs with a real key, through any of its three services, and USAJOBS (row 1 above). What JSearch
-  answers when a plan's requests run out has not been seen either
+- Google for Jobs through a RapidAPI key and through SerpAPI, and USAJOBS (row 1 above). JSearch with a key
+  from OpenWeb Ninja has run: its first search, on 2026-11-24, brought 20 postings. What JSearch answers when a
+  plan's requests run out has still not been seen
   ([job-sources.md](job-sources.md#when-google-for-jobs-does-not-answer)).
+- The whole app on Node 24. Sloan's desktop has Node 24 and has run the search server since 2026-11-24. CI
+  checks Node 22 only, and `npm run smoke --prefix server` has not been run on the desktop yet.
 - The points in [applications-plan.md](applications-plan.md#16-to-confirm-on-live-sites), section 16.

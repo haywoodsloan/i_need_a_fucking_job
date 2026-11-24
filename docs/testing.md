@@ -145,7 +145,7 @@ commit. The contract test checks that too.
 4. Record its cassette (`npm run fixtures:record -- <name>`), or write one by hand with `"origin": "handwritten"`
    if the service cannot be reached from where you are.
 5. Wire it into `planSearch` in `src/jobs/aggregate.ts`, and test the wiring in `src/jobs/aggregate.test.ts`.
-6. Add it to [job-sources.md](job-sources.md). Ask Sloan to run `npm run smoke --prefix server` on the laptop.
+6. Add it to [job-sources.md](job-sources.md). Ask Sloan to run `npm run smoke --prefix server` on their computer.
 
 ## Pages
 
@@ -277,8 +277,8 @@ together.
 A green run does not cover these. Each one is a known gap, not an oversight:
 
 - **The live job sites.** No automated test calls them. A source can pass every test and be broken because the
-  site changed. `npm run smoke --prefix server` on the laptop is the check, and so is recording the cassettes
-  again.
+  site changed. `npm run smoke --prefix server` on Sloan's computer is the check, and so is recording the
+  cassettes again.
 - **Hand-written cassettes.** They match what the adapter expects, which is not proof of what the service sends.
 - **The browser tier driving a real browser** (`playwrightLoader` in `server/src/browser.ts`). Its logic is tested
   with a stand-in page loader.

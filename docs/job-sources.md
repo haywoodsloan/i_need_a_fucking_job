@@ -173,7 +173,7 @@ in the search results, and the same board's listings still arrive through Google
 No automated test calls a live site. Each source is tested two ways: against small samples for the fields it
 reads (`src/jobs/jobs.test.ts` and the tests next to the adapters), and from request to posting against a recorded
 answer (`test/sources/contract.test.ts`). The recorded answers are typed by hand until someone records real ones
-on the laptop. [testing.md](testing.md#recorded-answers-from-job-sources) has both, and the steps for
+on Sloan's computer. [testing.md](testing.md#recorded-answers-from-job-sources) has both, and the steps for
 [adding a source](testing.md#adding-a-job-source).
 
 So the live services are checked by hand. Since 2026-11-16 the samples follow what they return. Run from a home
@@ -182,11 +182,12 @@ connection on that date, searching "software engineer" near Austin, TX:
 | Source | Result |
 | --- | --- |
 | Greenhouse, Lever, Ashby, SmartRecruiters, Workday, Amazon Jobs | Working. All 33 catalog companies on these systems resolve. |
+| Workday, on 2026-11-24 | Blocked. In the first search from Sloan's desktop, all eight catalog companies on Workday were answered 429 with a bot check. Nobody has looked into why ([status.md](status.md#known-gaps)). |
 | Company auto-discovery | Working (found Duolingo on Greenhouse from the typed name). |
 | LinkedIn public pages | Working: 30 results per search, full descriptions on open. |
 | Remote OK | Working. |
 | Remotive | Working, but its public feed now carries only about 17 jobs in total. |
-| Google for Jobs through JSearch from OpenWeb Ninja | Added 2026-11-24 from the service's published description. Not yet run with a key. Asked without one, the service answered 401, as the adapter expects. |
+| Google for Jobs through JSearch from OpenWeb Ninja | Working with Sloan's key since 2026-11-24. The first search brought 20 postings in about 4 seconds. Asked without a key, the service answers 401, as the adapter expects. |
 | Google for Jobs through JSearch on RapidAPI, or through SerpAPI | Not yet run: needs a key. The RapidAPI route was moved to `/search-v2` on 2026-11-24 without a live check. |
 | USAJOBS | Not yet run: needs a key. The endpoint is reachable and asks for one. |
 | Indeed headless browser | Not run. |
