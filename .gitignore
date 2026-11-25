@@ -4,7 +4,7 @@ dist
 .env
 .env.*
 !.env.example
-# The local account database (see docs/accounts.md)
+# The local account database (see docs/accounts.md) and the tracked applications (see docs/applications.md)
 server/.data/
 # Your own fetch tiers (see docs/fetch-tiers.md)
 server/*.local.mjs

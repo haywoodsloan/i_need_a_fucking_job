@@ -8,11 +8,12 @@ the commands, and where to read more. It is kept short on purpose. Details live 
 ## What this is
 
 A web app for one person's job hunt, shared with a few friends: search many job boards at once, read a resume into
-checked fields, sign in. Tracking and sending applications come next ([docs/status.md](docs/status.md)).
+checked fields, sign in, keep track of applications. Sending them from inside the app comes next
+([docs/status.md](docs/status.md)).
 
 - **Frontend:** React and Vite, in `src/`. A static copy runs on GitHub Pages as a demo.
 - **Server:** Node 22 with no web framework, in `server/`. It holds API keys, reaches job sources a browser cannot,
-  and runs accounts. Sloan runs it on their own Windows computer with `npm run local`.
+  runs accounts, and keeps the applications. Sloan runs it on their own Windows computer with `npm run local`.
 
 ## Rules that do not bend
 
@@ -22,7 +23,8 @@ and what the rule leaves room for.
 
 1. **Your words, verbatim.** Nothing the app writes may enter an application. A resume field is an exact slice of
    the uploaded file or something the user typed, and `toApplicationProfile` is the only way out
-   ([0001](docs/decisions/0001-applications-use-the-users-own-words.md)).
+   ([0001](docs/decisions/0001-applications-use-the-users-own-words.md)). A tracked answer says who wrote it, and
+   an assistant's draft is never marked as the user's ([0021](docs/decisions/0021-an-answer-is-marked-with-who-wrote-it.md)).
 2. **No bot-check bypass.** When a site refuses automated traffic, the source is reported as blocked. No disguise,
    no CAPTCHA solving, no proxies, and no extending the old Indeed route in `server/src/indeed.ts`
    ([0007](docs/decisions/0007-no-bot-check-bypass.md)).
@@ -30,8 +32,8 @@ and what the rule leaves room for.
    ([0008](docs/decisions/0008-resume-is-read-in-the-browser-by-rules.md)).
 4. **Job site HTML is hostile.** It reaches the page only through `sanitizeHtml`, and the served app runs under
    a strict content security policy ([0015](docs/decisions/0015-job-html-is-sanitized-and-the-app-runs-under-a-strict-policy.md)).
-5. **No secrets in the repository.** Keys live in `server/.env`, the account database in `server/.data/`. Both are
-   gitignored. A recorded fixture never holds a key. A test never writes to `server/.env`.
+5. **No secrets in the repository.** Keys live in `server/.env`, the account database and the applications in
+   `server/.data/`. Both are gitignored. A recorded fixture never holds a key. A test never writes to `server/.env`.
 6. **Tests never touch the live network.** A guard fails any test that tries
    ([0016](docs/decisions/0016-how-the-code-is-tested.md)).
 7. **It runs on Windows and on Linux.** Sloan's computer is Windows, CI and hosting are Linux. CI checks both.
@@ -47,10 +49,11 @@ Only Sloan decides: spending money, API keys, installing software on Sloan's com
 | --- | --- |
 | `src/jobs/` | Job search: one adapter per source, the catalog of companies, merging. **Runs in the browser and in the server**, so no `node:` imports and no DOM here. |
 | `src/resume/` | Reading a resume: file to text (`extract.ts`, `load.ts`), text to fields (`parse.ts`), the model and its guarantee (`model.ts`). Browser only. |
+| `src/apply/` | A tracked application and its rules: who wrote an answer, who may change what. **Browser and server**, like `src/jobs/`. |
 | `src/account/` | The app's side of sign-in. `api.ts` is shared with the server. |
 | `src/ui/` | Pages and components. `sanitize.ts` is the barrier for job site HTML. |
 | `src/testing/` | Helpers for component tests: a fake server at the `fetch` boundary. |
-| `server/src/` | The server: `index.ts` starts it, `app.ts` answers requests, `fetcher.ts` and `tiers.ts` reach job sources, `accounts/` and `db/` are sign-in. |
+| `server/src/` | The server: `index.ts` starts it, `app.ts` answers requests, `fetcher.ts` and `tiers.ts` reach job sources, `accounts/` and `db/` are sign-in, `applications/` is the tracker, `listen.ts` says who can reach it. |
 | `test/` | Tests that are not next to their code: `server/`, `sources/`, `integration/`, `e2e/`, with `helpers/` and `fixtures/`. |
 | `docs/` | Everything written down. Start at [docs/README.md](docs/README.md). |
 | `.github/workflows/ci.yml` | Checks every push on Linux and Windows. Deploys the demo from `main`. |
@@ -99,7 +102,8 @@ Run from the repository root. Node 22.12 or newer.
 | Add a filter or a setting to the search page | [0018](docs/decisions/0018-search-options-are-fields-and-lists-not-pills.md): fields and lists, never pills. The controls are in `src/ui/controls.tsx` |
 | Touch resume reading | [docs/resume-model.md](docs/resume-model.md) |
 | Touch sign-in, sessions or the database | [docs/accounts.md](docs/accounts.md) |
-| Build tracking, the login vault or applying | [docs/applications-plan.md](docs/applications-plan.md) |
+| Touch the tracker, or work on Sloan's applications as an agent | [docs/applications.md](docs/applications.md) |
+| Build the login vault or applying | [docs/applications-plan.md](docs/applications-plan.md) |
 | Wonder why something is the way it is | [docs/decisions/](docs/decisions/README.md) |
 
 ## Keeping the docs true

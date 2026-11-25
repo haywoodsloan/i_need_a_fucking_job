@@ -267,6 +267,7 @@ describe('the other routes', () => {
       tiers: ['cache', 'http'],
       fetch: { requests: 0, cacheHits: 0, retries: 0, blocked: 0, answeredBy: {}, cacheEntries: 0, cacheMb: 0 },
       accounts: false,
+      applications: false,
     });
   });
 

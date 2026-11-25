@@ -10,7 +10,8 @@
  *   expect(server.sent('POST /api/search')[0].body).toEqual({ ... });
  *
  * A request the test gave no answer for fails the test when it ends. Routes can be replaced while a test runs
- * (`server.routes['GET /api/health'] = ...`) to change what the server says next.
+ * (`server.routes['GET /api/health'] = ...`) to change what the server says next. A route that ends in "/*" answers
+ * every path under it that has no route of its own: 'GET /api/applications/*'.
  *
  * The real server's side of these routes is tested in test/server/ and test/integration/. If a reply shape changes
  * there, the types in src/account/api.ts and src/jobs/types.ts change with it, and the fakes built on this stop
@@ -47,7 +48,10 @@ export function fakeServer(routes: Record<string, Route>) {
       origin: url.origin,
     };
     calls.push(call);
-    const route = routes[`${method} ${url.pathname}`];
+    const under = Object.keys(routes)
+      .filter((key) => key.endsWith('/*') && `${method} ${url.pathname}`.startsWith(key.slice(0, -1)))
+      .sort((a, b) => b.length - a.length)[0];
+    const route = routes[`${method} ${url.pathname}`] ?? routes[under];
     if (!route) {
       unexpected.push(`${method} ${url.pathname}`);
       return new Response('Not found', { status: 404 });

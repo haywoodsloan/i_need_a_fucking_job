@@ -2,8 +2,8 @@
  * The built app in a real browser, served by the server's own code under its real security headers.
  *
  * This is the one place where everything is real at once: the production build, the content security policy, the
- * sign-in cookie, the embedded database on disk, the PDF reader and its background worker, the Word reader's
- * browser build, and the browser's own storage. Only the job sites are stand-ins (the cassettes), and the browser
+ * sign-in cookie, the embedded database on disk, the applications as files in a folder, the PDF reader and its
+ * background worker, the Word reader's browser build, and the browser's own storage. Only the job sites are stand-ins (the cassettes), and the browser
  * is cut off from every address but the app's.
  *
  * These tests are slow next to the others and need a browser, so there are few of them: one per journey that
@@ -12,13 +12,15 @@
  * Run them with `npm run test:e2e`. docs/testing.md, "In a real browser", says how to give them a browser.
  */
 import { randomBytes } from 'node:crypto';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { chromium, type Browser, type BrowserContext, type Locator, type Page } from 'playwright';
 import { afterAll, afterEach, beforeAll, describe, expect, inject, it } from 'vitest';
 import { readAccountsConfig, startAccounts, type Accounts } from '../../server/src/accounts/index';
+import { startApplications } from '../../server/src/applications/index';
 import { APP_CSP, loadApp } from '../../server/src/static';
+import { FILE_FORMAT, type Application, type ApplicationsFile } from '../../src/apply/model';
 import { loadCassette, replay, type Replay } from '../helpers/cassette';
 import { RESUME, resumeDocx, resumePdf } from '../helpers/resume-files';
 import { startTestServer, type TestServer } from '../helpers/server';
@@ -26,6 +28,7 @@ import { startTestServer, type TestServer } from '../helpers/server';
 const remotive = loadCassette('remotive');
 const remoteok = loadCassette('remoteok');
 const dataDir = mkdtempSync(join(tmpdir(), 'job-hunt-e2e-data-'));
+const applicationsDir = join(dataDir, 'applications');
 
 let server: TestServer;
 let accounts: Accounts;
@@ -94,7 +97,9 @@ beforeAll(async () => {
   network = replay(remotive, remoteok);
   server = await startTestServer({
     network,
-    builtApp: loadApp(inject('appDir'), { accounts: true }),
+    builtApp: loadApp(inject('appDir'), { accounts: true, applications: true }),
+    // The browser reaches this server at an address of this machine only, which is where a server keeps applications.
+    applications: startApplications({ dir: applicationsDir }),
     // Accounts are told the app's address, which is only known once the server listens. So they start second.
     accounts: { owns: (path) => accounts.owns(path), handle: (req, res, url) => accounts.handle(req, res, url) },
   });
@@ -244,6 +249,74 @@ describe('the built app in a browser', () => {
 
     // The refused sign-in was answered with 401, which the browser logs. Nothing else went wrong.
     expect(v.problems).toEqual([expect.stringMatching(/401/)]);
+    expect(server.errors).toEqual([]);
+  });
+
+  it('keeps an application on the computer the server runs on, for the page and for an assistant alike', async () => {
+    const id = 'globex-staff-technical-writer';
+    const v = await visit('/#/applications');
+    const { page } = v;
+    // The server said in the page it served that it keeps applications, so the page asked for them.
+    await shown(page.getByText('No applications yet.', { exact: false }));
+
+    // The user adds a job they found somewhere else.
+    await page.getByRole('button', { name: 'Add an application' }).click();
+    await page.getByLabel('Job title').fill('Staff Technical Writer');
+    await page.getByLabel('Company').fill('Globex');
+    await page.getByLabel('Link to the posting').fill('https://job-boards.greenhouse.io/globex/jobs/1');
+    await page.getByRole('button', { name: 'Add', exact: true }).click();
+    await shown(page.getByRole('heading', { level: 1, name: 'Staff Technical Writer' }));
+    expect(page.url()).toBe(`${origin}/#/applications/${id}`);
+
+    // An assistant on the same computer prepares the form: a request with no page behind it.
+    const prepared = await server.post(`/api/applications/${id}`, {
+      changes: {
+        stage: 'drafting',
+        form: { url: 'https://job-boards.greenhouse.io/globex/jobs/1#app' },
+        fields: [
+          { id: 'why', label: 'Why Globex?', kind: 'longtext', required: true, value: 'A first draft about Globex.', status: 'draft' },
+          { id: 'start', label: 'When can you start?', kind: 'text', required: true, value: '', status: 'ask' },
+        ],
+      },
+    });
+    expect(prepared.status).toBe(200);
+
+    // The page shows it once the window is looked at again. The user keeps the draft as it is and answers the question.
+    await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+    const draft = page.getByRole('form', { name: 'Why Globex?' });
+    await shown(draft.getByRole('textbox'));
+    expect(await draft.getByRole('textbox').inputValue()).toBe('A first draft about Globex.');
+    await draft.getByRole('button', { name: 'Keep as it is' }).click();
+    const question = page.getByRole('form', { name: 'When can you start?' });
+    await question.getByRole('textbox').fill('Two weeks after an offer.');
+    await question.getByRole('button', { name: 'Save answer' }).click();
+    await shown(page.getByText('Nothing. Every question of the form has a settled answer.'));
+
+    // It is a file in the server's folder, and the file says who wrote what.
+    const kept = JSON.parse(readFileSync(join(applicationsDir, `${id}.json`), 'utf8')) as Application;
+    expect([kept.stage, kept.stageSetBy, kept.timeline[0].by]).toEqual(['drafting', 'assistant', 'user']);
+    expect(kept.form?.fields.map((f) => [f.id, f.value, f.status, f.origin, f.acceptedAt !== undefined])).toEqual([
+      ['why', 'A first draft about Globex.', 'filled', 'assistant', true],
+      ['start', 'Two weeks after an offer.', 'filled', 'user', false],
+    ]);
+
+    // So all of it is still there when the page is opened again.
+    await page.reload();
+    await shown(page.getByText('Nothing. Every question of the form has a settled answer.'));
+    await page.getByRole('link', { name: 'All applications' }).click();
+    const row = page.getByRole('row').filter({ has: page.getByRole('link', { name: 'Staff Technical Writer' }) });
+    await shown(row);
+    expect((await row.getByRole('cell').allTextContents()).slice(0, 2)).toEqual(['Being prepared', 'Nothing']);
+
+    // "Export" is a plain link, and the browser saves what the server answers as a file.
+    const [download] = await Promise.all([page.waitForEvent('download'), page.getByRole('link', { name: 'Export' }).click()]);
+    expect(download.suggestedFilename()).toBe('job-applications.json');
+    const exported = JSON.parse(readFileSync(await download.path(), 'utf8')) as ApplicationsFile;
+    expect(exported.format).toBe(FILE_FORMAT);
+    expect(exported.applications.map((a) => (a as Application).id)).toEqual([id]);
+
+    expect(v.problems).toEqual([]);
+    expect(v.refused).toEqual([]);
     expect(server.errors).toEqual([]);
   });
 

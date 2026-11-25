@@ -4,7 +4,8 @@ A web app for finding jobs, tracking applications, prepping for interviews, and 
 
 **Core rule: applications use your own words, verbatim.** The app never writes text on your behalf. Every piece of
 resume data is either an exact slice of the file you uploaded (with a pointer to where it came from) or something
-you typed yourself.
+you typed yourself. When an assistant outside the app drafts an answer for you, the app keeps it marked as the
+assistant's draft, and never as yours.
 
 **Working on the code, as a person or as an AI agent?** Start with [AGENTS.md](AGENTS.md): the rules, a map of
 the code, the commands, and what "done" means. [docs/status.md](docs/status.md) says where things stand, and
@@ -16,7 +17,8 @@ the code, the commands, and what "done" means. [docs/status.md](docs/status.md) 
 | --- | --- | --- |
 | Job search aggregator | `src/jobs`, `src/ui/SearchPage.tsx`, `server/` | One search bar, one de-duplicated result list, postings readable in-app |
 | Resume upload + analyzer | `src/resume`, `src/ui/ResumePage.tsx` | PDF / DOCX / TXT parsed in the browser, side-by-side verification |
-| Accounts and sign-in | `src/account`, `src/ui/AccountPage.tsx`, `server/src/accounts` | Invite-only and off until you turn it on. The base for tracking applications. See [docs/accounts.md](docs/accounts.md) |
+| Application tracker | `src/apply`, `src/ui/ApplicationsPage.tsx`, `server/src/applications` | On your own computer: every application with its stage, the questions of its form, what goes in them and who wrote that. A restart loses nothing. See [docs/applications.md](docs/applications.md) |
+| Accounts and sign-in | `src/account`, `src/ui/AccountPage.tsx`, `server/src/accounts` | Invite-only and off until you turn it on. The base for a hosted copy. See [docs/accounts.md](docs/accounts.md) |
 
 ## Architecture
 
@@ -34,13 +36,14 @@ the code, the commands, and what "done" means. [docs/status.md](docs/status.md) 
 │   • caches, paces and retries every outbound request                  │
 │   • optional headless Chromium (Playwright)                           │
 │   • optional accounts and sign-in, with their own database            │
+│   • on your own computer: the applications you track, as files        │
 └───────────────────────────────────────────────────────────────────────┘
 ```
 
 The server can also serve the app itself (`npm run local:built`), so the two share one address. Sign-in needs
-that, and a hosted copy with accounts will run that way. The GitHub Pages copy stays a demo without accounts.
-[docs/architecture.md](docs/architecture.md) has the full picture: every folder, and what happens during a search,
-a resume upload and a sign-in.
+that, and a hosted copy with accounts will run that way. The GitHub Pages copy stays a demo without accounts and
+without applications. [docs/architecture.md](docs/architecture.md) has the full picture: every folder, and what
+happens during a search, a resume upload, a sign-in and the work on an application.
 
 **What needs the backend, and why**
 
@@ -52,6 +55,7 @@ a resume upload and a sign-in.
 | LinkedIn public pages, company auto-discovery | no CORS, needs server-side requests | `server/` |
 | Indeed headless browser | needs a real Chromium process | `server/` (Docker) |
 | Accounts and sign-in | a static host cannot check a password or keep a session | `server/` |
+| The application tracker | a static host keeps no files, and the tracker has no sign-in, so it answers only the computer it runs on | `server/` on your own computer |
 
 The resume never touches the backend. It is parsed and stored in the browser (localStorage + IndexedDB).
 
@@ -61,7 +65,8 @@ that allow direct browser access (Greenhouse, Lever, Ashby, SmartRecruiters comp
 See [docs/job-sources.md](docs/job-sources.md) for every source, its cost and its risks,
 [docs/fetch-tiers.md](docs/fetch-tiers.md) for how the server fetches (cache, HTTP, optional browser) and how to plug
 in a tier of your own, [docs/resume-model.md](docs/resume-model.md) for the resume data model,
-[docs/accounts.md](docs/accounts.md) for accounts and sign-in, [docs/testing.md](docs/testing.md) for the tests, and
+[docs/applications.md](docs/applications.md) for the application tracker, [docs/accounts.md](docs/accounts.md) for
+accounts and sign-in, [docs/testing.md](docs/testing.md) for the tests, and
 [docs/decisions/](docs/decisions/README.md) for why things are the way they are.
 
 ## Run it
@@ -74,6 +79,11 @@ npm install --prefix server
 cp server/.env.example server/.env   # add keys; the file is gitignored and loaded automatically
 npm run local                        # backend on http://localhost:8787, frontend on http://localhost:5173
 ```
+
+The server answers the computer it runs on and no other. The applications you save are kept there, as files in
+`server/.data/applications/`, and they are still there after a restart. Nothing starts by itself: after a restart of
+the computer, run `npm run local` again. `HOST=0.0.0.0` in `server/.env` lets other computers reach the server, and
+a server that others can reach keeps no applications ([docs/applications.md](docs/applications.md#where-the-tracker-is-on)).
 
 Accounts are optional and off by default. To turn them on, run this once and open the link it prints:
 
@@ -126,7 +136,9 @@ Any Docker host works: `docker build -f server/Dockerfile -t job-hunt-server .`
 
 This deploys search only. Leave accounts off on a hosted server for now: its database lives in a folder inside the
 container, which a redeploy throws away. Hosting with accounts is a later step of the plan
-([docs/applications-plan.md](docs/applications-plan.md), section 11).
+([docs/applications-plan.md](docs/applications-plan.md), section 11). A hosted server keeps no applications
+either: the image sets `HOST=0.0.0.0` so that it can be reached, and the tracker is only on where nobody else can
+reach the server.
 
 ## Roadmap hooks already in the data model
 
@@ -135,5 +147,6 @@ container, which a redeploy throws away. Hosting with accounts is a later step o
   if any field differs from its source.
 
 The plan for the next phase (accounts, stored site logins, application tracking and submitting) is in
-[docs/applications-plan.md](docs/applications-plan.md). Its first step, accounts and sign-in, is built
-([docs/accounts.md](docs/accounts.md)). The rest is not built yet.
+[docs/applications-plan.md](docs/applications-plan.md). Two of its steps are built: accounts and sign-in
+([docs/accounts.md](docs/accounts.md)), and the tracker for a person's own computer
+([docs/applications.md](docs/applications.md)). The rest is not built yet.

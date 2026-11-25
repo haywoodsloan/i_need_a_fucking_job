@@ -98,6 +98,8 @@ interface StaticFile {
 export interface AppOptions {
   /** Accounts are on: the page is told so, and asks who is signed in. Left out, it never calls the account routes. */
   accounts?: boolean;
+  /** This server keeps applications: the page is told so, and shows them. Left out, it never calls the tracker. */
+  applications?: boolean;
   /** The app is reached over HTTPS. */
   https?: boolean;
 }
@@ -119,9 +121,14 @@ export function loadApp(dir: string, o: AppOptions = {}) {
   const add = (path: string, raw: Buffer) => {
     let body = raw;
     if (path === '/index.html') {
-      // Tells the page what the server it came from offers: search (src/jobs/client.ts), and accounts when they
-      // are on (src/account/client.ts). A copy of the app on a static host has neither line.
-      const tags = ['<meta name="job-hunt-server" content="on" />', ...(o.accounts ? ['<meta name="job-hunt-accounts" content="on" />'] : [])];
+      // Tells the page what the server it came from offers: search (src/jobs/client.ts), accounts when they are on
+      // (src/account/client.ts), and the application tracker when it keeps one (src/apply/client.ts). A copy of the
+      // app on a static host has none of these lines.
+      const tags = [
+        '<meta name="job-hunt-server" content="on" />',
+        ...(o.accounts ? ['<meta name="job-hunt-accounts" content="on" />'] : []),
+        ...(o.applications ? ['<meta name="job-hunt-applications" content="on" />'] : []),
+      ];
       body = Buffer.from(raw.toString('utf8').replace('</head>', `  ${tags.join('\n    ')}\n  </head>`));
     }
     files.set(path, {

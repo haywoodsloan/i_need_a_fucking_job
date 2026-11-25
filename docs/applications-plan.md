@@ -1,9 +1,12 @@
 # Accounts, site logins and application tracking: design plan
 
-**Status:** Step 0 of the build order ([15](#15-build-order)), accounts and sign-in, is built and described in
-[accounts.md](accounts.md). Where it differs from this plan is listed in [4.6](#46-as-built-in-step-0). Nothing else
-in this document is built yet. Written 2026-11-16. Decision 1 was made the same day. Decisions 2 to 7 are still open
-([2](#2-decisions-for-sloan)). Step 0 follows the recommended answer to decision 4.
+**Status:** Two steps of the build order ([15](#15-build-order)) are built. Step 0, accounts and sign-in, is
+described in [accounts.md](accounts.md), and where it differs from this plan is listed in
+[4.6](#46-as-built-in-step-0). Step 1, the tracker, is built for a person's own computer and described in
+[applications.md](applications.md), and where it differs is listed in [7.0](#70-as-built-in-step-1). Nothing else in
+this document is built yet. Written 2026-11-16. Decision 1 was made the same day. Decision 5 was made in part on
+2026-11-24. Decisions 2 to 7 are otherwise still open ([2](#2-decisions-for-sloan)). Step 0 follows the recommended
+answer to decision 4.
 
 This is the plan for the phase after job search and the resume analyzer: user accounts, safe storage of each user's
 logins for job boards and hiring systems, tracking applications, submitting them from inside the app, where Claude
@@ -36,8 +39,8 @@ Contents: [1 What was asked](#1-what-was-asked-and-where-the-plan-answers-it) ·
 
 ## 2. Decisions for Sloan
 
-Decision 1 is made. Decisions 2 to 7 are open: each has a recommended default, and the rest of this plan assumes
-those defaults.
+Decision 1 is made, and decision 5 in part. The others are open: each has a recommended default, and the rest of
+this plan assumes those defaults.
 
 | # | Decision | Recommended | If you choose otherwise |
 | --- | --- | --- | --- |
@@ -45,9 +48,15 @@ those defaults.
 | 2 | Who presses the final Submit? | **The user**, on the real form, after reviewing it in the app. | Automatic submit can be allowed per site later, once that site's connector has a clean record. |
 | 3 | Where does it run, and do we buy a domain? | **Yes to a domain** (about $10 to $15 a year), because sign-in cookies need the app and the API on one site. Laptop first, Azure credits for a staging copy, then choose the friends-facing host. | Staying on `github.io` plus a separate API host means weaker sign-in security and breaks in Safari ([11](#11-hosting)). |
 | 4 | Is it acceptable that a forgotten password loses the stored site logins? | **Yes.** It is the price of logins that we cannot read. A recovery code given at sign-up avoids the loss, and tracker data survives either way. | Making logins recoverable by us means the server can open the vault without the user, which removes the guarantee asked for. |
-| 5 | May data leave the browser? Today the resume never does. | **Yes, in two ways.** Application records and what was submitted are stored encrypted in the account. Resume text goes to the Claude API only for users who switch AI help on. | Without storage there is no cross-device tracker. Without the API the built-in rules parser still works. |
+| 5 | May data leave the browser? Today the resume never does. | **Yes, in two ways.** Application records and what was submitted are stored encrypted in the account. Resume text goes to the Claude API only for users who switch AI help on. **Decided in part 2026-11-24:** on a person's own computer the app's server keeps the applications in a folder there ([0020](decisions/0020-applications-are-kept-by-the-server-on-its-own-computer.md)). Still open: records in an account on a hosted copy, and resume text to the API. | Without storage there is no cross-device tracker. Without the API the built-in rules parser still works. |
 | 6 | May AI suggest wording? | **No.** AI gives feedback and points at text. Nothing it writes can enter an application. | Suggestions the user accepts would need a third, visible origin label ("AI-assisted") next to `source` and `user`. |
 | 7 | Host a small model ourselves? | **No, not now.** Use Haiku 5.5 for light tasks and revisit if light calls pass about $10 a month. | See the options and prices in [10](#10-a-cheap-home-for-lighter-models). |
+
+On decision 6: the app still writes nothing. Since 2026-11-24 the tracker holds first drafts that an assistant
+outside the app wrote for Sloan, and every answer is marked with who wrote it
+([0021](decisions/0021-an-answer-is-marked-with-who-wrote-it.md)). That is the "visible origin label" of the last
+column, built for the records. It does not answer decision 6. Whether the app's own AI may suggest wording, and
+whether the app may send an assistant's text when it fills forms itself in Step 2, is still Sloan's to decide.
 
 ## 3. Starting point
 
@@ -347,6 +356,45 @@ login and sees far fewer challenges, but it means an install, desktop only, and 
 extensions it detects.
 
 ## 7. Tracking applications
+
+### 7.0 As built in Step 1
+
+Step 1 is built for one case: a person who runs the app on their own computer, which is how Sloan uses it.
+[applications.md](applications.md) is the reference for what exists. 7.1 to 7.5 are still the plan for a hosted
+copy, and for the parts that are not built. What differs from them:
+
+- **Where the records are.** The plan keeps them in the user's account, encrypted (class D in
+  [12](#12-data-model)). The built tracker keeps them as readable files in a folder on the computer the server
+  runs on, with no account and no encryption, and only where nobody else can reach that server
+  ([0020](decisions/0020-applications-are-kept-by-the-server-on-its-own-computer.md)). A hosted copy keeps no
+  applications. The routes reach the records through two small interfaces, so the account database can go behind
+  them later without a change to the pages.
+- **An assistant works on the records.** In the plan the app fills the forms (Step 2). Today an assistant outside
+  the app prepares each application in a browser, up to Submit, and writes it into the tracker. So the tracker's
+  routes are made for a program as much as for the page, and every change says who made it.
+- **The record holds the form before it is sent.** [7.5](#75-what-was-submitted) keeps what was submitted. The
+  built record holds every question of the form from the day it is prepared: what goes in it, whether that is
+  settled, a first draft, a question for the user, or something only the user does, and who wrote it
+  ([0021](decisions/0021-an-answer-is-marked-with-who-wrote-it.md)). Once the application is marked as sent, an
+  assistant can no longer change its answers, so they stand as the record of what was sent. The resume file's hash
+  and the site's confirmation are not kept yet.
+- **Who set a stage** is `user`, `assistant` or `site`, one more than [7.1](#71-what-a-tracked-application-holds)
+  has. Nothing reads a stage from a site yet. The mark `site` is kept for that day, and for now it only arrives in
+  a file the user imports.
+- **How applications get in ([7.2](#72-how-applications-get-into-the-tracker)).** Built: one click on a search
+  result ("Save to applications"), adding a job by hand with its title, company and link, importing a file in the
+  app's own format, which is what "Export" writes, and an assistant adding them through the routes. Not built:
+  filling in a job from a pasted link, importing a spreadsheet, another tracker's export or LinkedIn's data
+  export, and syncing from a site's own list.
+- **No checks ([7.3](#73-checks-happen-only-while-signed-in)).** Nothing asks a site about an application, and the
+  "posting closed" check of the build order is not built. The user or an assistant sets the stage.
+- **Open on the real site ([7.4](#74-open-on-the-real-site))** is two plain links, to the form and to the posting.
+  No login is stored, so there is no account line and no "Show login".
+- **Nothing starts by itself.** After a restart of the computer someone starts the app, and the applications are
+  there as they were left ([applications.md](applications.md#after-a-restart)).
+- **The server answers its own computer only,** unless a setting says otherwise
+  ([0022](decisions/0022-the-server-answers-its-own-computer-unless-told-otherwise.md)). That came with the
+  tracker, because it has no sign-in.
 
 ### 7.1 What a tracked application holds
 
@@ -691,13 +739,14 @@ account, or that the operator cannot see tracker data.
   `connectors/`, `live/` and `ai/`. `server/src/index.ts` stays on Node's built-in HTTP server for now
   ([4.2](#42-why-sign-in-is-built-here-and-not-bought)). Search keeps working unchanged for signed-out users.
 - `src/apply/` holds the shared types (form questions, fill plans, saved answers), used by both the browser and the
-  server, the way `src/jobs` is today.
-- New pages: Sign in, Applications, Application detail, Apply review, Connected sites, Account.
+  server, the way `src/jobs` is today. (Step 1 put the application record and its rules there.)
+- New pages: Sign in, Applications, Application detail, Apply review, Connected sites, Account. (Sign in and
+  Account came with Step 0, Applications and Application detail with Step 1.)
 - `src/resume/model.ts` keeps its contract. AI-located fields are still `origin: 'source'`, since the text is an
   exact slice.
 - Local development moves to one origin: Vite proxies `/api` to the backend, replacing the cross-origin
   `VITE_API_URL` setup for anything signed-in. `npm run local` keeps working. (Built in Step 0 for the account
-  routes. Search still calls the backend directly.)
+  routes and in Step 1 for the tracker's. Search still calls the backend directly.)
 - README and docs: reword the two promises named in [3](#3-starting-point) when the parts that change them ship.
 - Tests: known-answer and tamper tests for every crypto path, sign-in and session tests, connector tests against
   recorded pages, and live smoke tests run from the laptop like `npm run smoke`.
@@ -709,7 +758,7 @@ Each step ends with something usable.
 | Step | What | Done when |
 | --- | --- | --- |
 | 0 | **Built.** Foundations: one-origin dev setup, database, accounts, sessions, invites, security headers, sanitizer tests | Sloan can sign in and out locally, and the auth tests pass |
-| 1 | Tracker without logins: records, one-click add, paste a link, file import, stages and timeline, Open on site, "posting closed" check | Sloan tracks real applications in the app |
+| 1 | **Built for a person's own computer** ([7.0](#70-as-built-in-step-1)). Tracker without logins: records, one-click add, paste a link, file import, stages and timeline, Open on site, "posting closed" check. Still to build: paste a link, other files than the app's own, the "posting closed" check, and the records in the account for a hosted copy | Sloan tracks real applications in the app |
 | 2 | Vault and assisted apply for sites that need no login: Greenhouse first, then Lever and Ashby. Key handling, lock and unlock, live view as a local window, form reading, matching, review, fill, user Submit, snapshots, saved answers | A real Greenhouse application is sent end to end from the laptop |
 | 3 | Workday: connect or create an account with the user present, stored passwords, status sync on open | A real Workday application's status shows in the tracker |
 | 4 | Hosted for friends: domain, deployment, streamed live view, invites, recovery codes, backups, the notice | A friend signs up from an invite and connects a site |

@@ -6,6 +6,7 @@
  *   POST /api/search           { query: JobQuery, settings: SearchSettings } → SearchResponse
  *   GET  /api/job?id=<job id>  full description for snippet-only results
  *   /api/auth, /api/account    sign-in and accounts, when this server is set up for them (see docs/accounts.md)
+ *   /api/applications          the application tracker, when this server keeps one (see docs/applications.md)
  *   everything else            the built app itself, when the server was started with --serve-app (see static.ts)
  *
  * Everything it needs is handed in, so the tests can run it with a fake clock and recorded answers instead of the
@@ -28,6 +29,8 @@ export interface AppParts {
   fetch: Fetcher;
   /** Sign-in and accounts, when this server has them switched on. */
   accounts?: { owns(path: string): boolean; handle(req: IncomingMessage, res: ServerResponse, url: URL): Promise<void> };
+  /** The application tracker, when this server keeps one. */
+  applications?: { owns(path: string): boolean; handle(req: IncomingMessage, res: ServerResponse, url: URL): Promise<void> };
   /** The built app, when this server serves it as well. */
   builtApp?: { handle(req: IncomingMessage, res: ServerResponse, path: string): boolean };
   /** Server-only extra sources, by id (the older Indeed browser route). */
@@ -87,7 +90,7 @@ function send(res: ServerResponse, status: number, body: unknown) {
 }
 
 export function createApp(parts: AppParts): (req: IncomingMessage, res: ServerResponse) => Promise<void> {
-  const { env, accounts, builtApp } = parts;
+  const { env, accounts, applications, builtApp } = parts;
   const fetcher = parts.fetch;
   const now = parts.now ?? Date.now;
   const logError = parts.logError ?? ((e: unknown) => console.error(e));
@@ -154,14 +157,18 @@ export function createApp(parts: AppParts): (req: IncomingMessage, res: ServerRe
     } catch {
       return send(res, 400, { error: 'Bad request' });
     }
-    // Account routes come first: they are for the app's own pages and must not get the CORS headers below.
-    if (accounts?.owns(url.pathname)) {
-      return accounts.handle(req, res, url).catch((e) => {
+    // Account and tracker routes come first: they are for the app's own pages and must not get the CORS headers below.
+    const own = [accounts, applications].find((part) => part?.owns(url.pathname));
+    if (own) {
+      return own.handle(req, res, url).catch((e) => {
         logError(e);
         if (!res.headersSent) send(res, 500, { error: 'Something went wrong on the server.' });
       });
     }
     if (url.pathname === '/api/auth/session') return send(res, 200, { available: false, user: null });
+    // A server that keeps no applications says so where the page asks, the way it does for accounts. Nothing else of
+    // the tracker exists on it: whoever tries to save an application there is told so, with a 404 further down.
+    if (url.pathname === '/api/applications' && req.method === 'GET') return send(res, 200, { available: false, applications: [] });
     if (builtApp && !url.pathname.startsWith('/api/') && builtApp.handle(req, res, url.pathname)) return;
     cors(req, res);
     if (req.method === 'OPTIONS') return void res.writeHead(204).end();
@@ -178,6 +185,7 @@ export function createApp(parts: AppParts): (req: IncomingMessage, res: ServerRe
           tiers: fetcher.tiers,
           fetch: fetcher.stats(),
           accounts: !!accounts,
+          applications: !!applications,
         });
       }
       if (url.pathname === '/api/search' && req.method === 'POST') return await search(req, res);

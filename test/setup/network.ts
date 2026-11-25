@@ -12,7 +12,7 @@
  *   - Code that calls the global `fetch` (the browser-side clients): `vi.stubGlobal('fetch', fake)`. The stub is
  *     removed after each test, and this guard is back.
  *
- * This guards `fetch` only. Nothing in the tests opens sockets any other way except to 127.0.0.1.
+ * This guards `fetch` only. Nothing in the tests opens sockets any other way except to this machine's own addresses.
  */
 const LOCAL_HOSTS = new Set(['127.0.0.1', 'localhost', '[::1]', '::1']);
 

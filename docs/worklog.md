@@ -21,6 +21,89 @@ The shape of an entry:
 **Commits:** short hashes, when the entry is written after them.
 ```
 
+## 2026-11-25: Applications are kept on the computer, and survive a restart
+
+**Asked for:** Sloan: "I'd like to be able to have you find the jobs prepare the applications and even if I
+restart my computer you should be able to resume the application where you left off." Sloan has an assistant
+outside the app find jobs and fill each employer's form up to Submit. A filled form lived only in its browser
+tab, and a restart emptied every tab.
+
+**Changed** ([applications.md](applications.md), decisions
+[0020](decisions/0020-applications-are-kept-by-the-server-on-its-own-computer.md),
+[0021](decisions/0021-an-answer-is-marked-with-who-wrote-it.md) and
+[0022](decisions/0022-the-server-answers-its-own-computer-unless-told-otherwise.md)):
+
+- **A tracker, which is step 1 of the plan for a person's own computer.** The server keeps every application as
+  a readable file in `server/.data/applications/`: the job, the stage, the address of the form, and every question
+  of the form with what goes in it. A file is replaced in one step, the version before a change is kept, and a
+  file that cannot be read is reported and never written over. Nothing is held in memory, so a restart of the
+  app or of the computer loses nothing.
+- **Every answer says who wrote it:** the user on the app's page, an assistant, or the live form it was read back
+  from. Nothing turns an assistant's text into the user's. A draft the user keeps as it is stays marked as the
+  assistant's, with the time it was kept. An assistant cannot change what the user wrote or kept, cannot fill a
+  pledge, a consent, a demographic question or a file to attach, and cannot remove an application. Rule 1 in
+  `AGENTS.md` now points at this.
+- **An Applications page,** at `#/applications`. The list shows what is in progress, sent and closed, with what
+  is left for the user. One application shows the questions that need an answer, the drafts with "Save my
+  version" and "Keep as it is", and what only the user does on the form, then every answer with who wrote it. A
+  search result has "Save to applications". The page asks the server again when its window gets the focus and
+  every quarter of a minute, because an assistant may be working on the same application.
+- **Routes for an assistant** under `/api/applications`, for a program on the same computer. Each request is
+  answered only when it comes from that computer, was sent to it by its own name, and, when a browser sent it,
+  comes from the app's own page. Any other is turned down before the server reads what it carries. "Export" and
+  "Import a file" move applications as one file.
+- **The server answers its own computer only,** unless `HOST` says otherwise. The tracker has no sign-in, so it
+  is on only there. `server/Dockerfile` sets `HOST=0.0.0.0`, so a hosted copy is reached as before, and keeps no
+  applications. When it starts, the server prints what it listens on and whether it keeps applications. A port
+  that is in use, or a `HOST` that is no address of the computer, now stops it with a sentence that says so.
+- **Nothing starts by itself.** Sloan was asked and chose that. After a restart of the computer someone starts
+  the app, and [applications.md](applications.md#after-a-restart) says how a session goes on from there.
+- **The demo has no tracker** and does not ask for one: it has no server of its own.
+- **Tests.** The rules of a record and the tracker's routes must have every line run by a test
+  (`src/apply/model.ts`, `server/src/applications/http.ts`). The pages are tested against the server's real
+  routes over records in memory (`fakeTracker` in `src/testing/`). One integration test ends a real server
+  process on the spot and starts another on the same folder, and asks at the address other computers use for the
+  machine to see that nothing answers there. A sixth browser journey adds an application, takes an assistant's
+  drafts, and reads the file on the disk. `startServerProcess` in `test/helpers/process.ts` is new, and keeps
+  every test away from the real applications folder. The suite has 1,231 tests and six browser journeys.
+- **Docs.** [applications.md](applications.md) is new. The plan says what step 1 built and what it left
+  ([7.0](applications-plan.md#70-as-built-in-step-1)), and that decision 5 is made in part.
+  [README.md](README.md) and [testing.md](testing.md) have a rule each that nothing about the job hunt itself,
+  such as where Sloan applies, goes into this public repository.
+
+**Found on the way:**
+
+- **The server was open to the network around it.** The session that set up the search key on Sloan's computer
+  saw that other devices on the same network could reach the server. Any of them could have run searches, which
+  spend a plan with a monthly limit. Sloan had been asked about closing it and had not answered. The tracker
+  could not be switched on while it was open, so it is closed by default now, and
+  [status.md](status.md#waiting-on-sloan) has the question as row 7.
+- **`localhost` is two addresses.** On Sloan's computer the dev server answers at the IPv6 one only, and other
+  programs try the IPv4 one first. So "this computer only" means listening on both. The cloud machine this was
+  built on has no IPv6 at all, and the server gets by with one address there.
+- **A late answer could have undone a newer one on the page.** The page asks the server from several places.
+  When two answers arrived out of order, the older one would have been shown last. The page now never shows an
+  older revision after a newer one, and a test holds a reply back to prove it.
+- **"Keep as it is" needs to know what the user was looking at.** An assistant can change a draft a moment
+  before the user presses the button. The press is sent with the revision the page shows, and is turned down
+  when the application has moved on.
+- **The menu no longer fitted a narrow phone** once it had a third link. The name of the app gives way first, and
+  under 640 pixels the list of applications is laid out as lines, not as a table.
+- **The first test data named real employers.** It was replaced with made-up ones before anything was committed,
+  which is where the rule above comes from.
+
+**Left open:**
+
+- **It has not run on Sloan's computer yet.** That is the next step: update the app there, bring in the
+  applications that were prepared before the tracker existed, and try a restart
+  ([status.md](status.md#not-yet-tried-on-a-real-machine)).
+- The rest of step 1: a job from a pasted link, other files than the app's own, the "posting closed" check, and
+  the records in an account for a hosted copy ([status.md](status.md#not-built)).
+- Decision 6 of the plan, for the day the app fills forms itself: whether it may send a draft an assistant wrote
+  ([status.md](status.md#waiting-on-sloan), row 2).
+- The folder is not encrypted, and any program on the computer can reach the tracker
+  ([applications.md](applications.md#known-limits)).
+
 ## 2026-11-24: The OpenWeb Ninja key works, and the server runs on Sloan's desktop
 
 **Asked for:** nothing new. This is the first run with a real key that the entry below left open, and the docs

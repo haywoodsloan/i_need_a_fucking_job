@@ -1,6 +1,6 @@
 # Status
 
-**Last updated: 2026-11-24.**
+**Last updated: 2026-11-25.**
 
 Where the project stands: what works, what comes next, what only Sloan can settle, and what is known to be wrong or
 unchecked. This file is rewritten whenever one of those changes, so it is always about today. What happened and
@@ -17,14 +17,20 @@ Contents: [Built](#built) · [Not built](#not-built) · [Next](#next) · [Waitin
 | Reaching job sources | Every request the server makes goes through one pipeline: cache, plain HTTP, an optional browser, and a place to plug in more. A bot check is reported as blocked. | [fetch-tiers.md](fetch-tiers.md) |
 | Resume | PDF, Word and text files are read in the browser, by rules, into fields that are exact slices of the file. A review screen shows the file and the fields side by side. Stored in the browser only. | [resume-model.md](resume-model.md) |
 | Accounts | Invite-only sign-in, sessions, recovery codes and admin commands. Off until set up. This is step 0 of the plan. | [accounts.md](accounts.md) |
+| Application tracker | On a person's own computer, the app's server keeps every application as a file: the job, the stage, the address of the form, and every question of the form with what goes in it and who wrote that. The Applications page shows what is left for the user. An assistant that prepares applications works on the same records. A restart of the app or the computer loses nothing. This is step 1 of the plan, for a person's own computer. | [applications.md](applications.md) |
+| Who reaches the server | Left alone, the server answers the computer it runs on and no other. A hosted copy says with `HOST=0.0.0.0` that other computers reach it. | [applications.md](applications.md#the-server-answers-this-computer-only) |
 | The served app | The server can serve the built app from its own address, under a strict content security policy. | [accounts.md](accounts.md#the-app-served-by-the-server) |
 | Tests | Unit, component, integration and browser tests, with a coverage minimum. Checked on Linux and Windows on every push. | [testing.md](testing.md) |
 | Demo | A static copy on GitHub Pages, deployed from `main` when the checks pass. No server is hosted yet, so search there reaches only the sources a browser may call. | [architecture.md](architecture.md#three-ways-it-runs) |
 
 ## Not built
 
-- **The application tracker**, the login vault, and applying through employer systems: steps 1 to 3 of
-  [applications-plan.md](applications-plan.md#15-build-order).
+- **The rest of the tracker:** filling in a job from a pasted link, importing a spreadsheet or another tracker's
+  export, checking whether a posting is still listed, and keeping applications in an account, which a hosted copy
+  needs ([what step 1 built and what it left](applications-plan.md#70-as-built-in-step-1)).
+- **The login vault, and applying through employer systems** from inside the app: steps 2 and 3 of
+  [applications-plan.md](applications-plan.md#15-build-order). Today an assistant outside the app fills the forms,
+  up to Submit, and the user submits.
 - **Hosting for friends**, with accounts: step 4.
 - **Claude** for breaking down and reviewing a resume and for finding job boards: step A.
 - **Dayforce and iCIMS** as job sources. Their feeds differ per employer and need research against the live sites.
@@ -34,9 +40,12 @@ Contents: [Built](#built) · [Not built](#not-built) · [Next](#next) · [Waitin
 
 From the plan's [build order](applications-plan.md#15-build-order):
 
-1. **Step 1: the tracker without logins.** Records, one-click add, paste a link, stages and a timeline, "Open on
-   site". It stores application records in the account, so it needs decision 5 below.
-2. **Step A, in parallel:** Claude for resume breakdown and review. Needs decisions 5, 6 and 7, and an API key.
+1. **The tracker on Sloan's computer.** It is built and has not run there yet. A session updates the app there,
+   brings in the applications that were prepared before the tracker existed, and tries a restart
+   ([applications.md](applications.md#after-a-restart)).
+2. **Step 2: the vault and assisted apply,** Greenhouse first. Needs decision 2 below, and decision 6 for the
+   first drafts an assistant wrote: whether the app may send them, and how they are labelled.
+3. **Step A, in parallel:** Claude for resume breakdown and review. Needs decisions 5, 6 and 7, and an API key.
 
 Work that needs no decision and can be picked up any time is under [Known gaps](#known-gaps).
 
@@ -48,11 +57,12 @@ the question.
 | # | What | Why it matters | Recommended |
 | --- | --- | --- | --- |
 | 1 | **Get a USAJOBS key, and say what should happen when the free Google for Jobs requests run out.** The JSearch key from OpenWeb Ninja is in `server/.env` on Sloan's computer and works since 2026-11-24. Its free plan stops at 200 requests a month, and a search uses up to 2 ([what a search costs](job-sources.md#what-a-search-costs)). | USAJOBS has never run against the real service. When the 200 are used up, listings from LinkedIn, Indeed, Glassdoor and ZipRecruiter stop arriving until the next month, and every other source carries on. | The USAJOBS key is free. For JSearch, `GOOGLE_JOBS_PAGES=1` halves what a search uses and costs nothing. A paid plan is Sloan's call. |
-| 2 | **Decisions 2 to 7 of the plan** ([the table](applications-plan.md#2-decisions-for-sloan)): who presses Submit, a domain, forgotten passwords and stored logins, whether data may leave the browser, whether AI may suggest wording, hosting a small model | Step 1 needs decision 5. Step 2 needs 2. Step 4 needs 3. Step A needs 5, 6 and 7. Step 0 was built on the recommended answer to 4. | The default written next to each one in the plan |
+| 2 | **Decisions 2 to 7 of the plan** ([the table](applications-plan.md#2-decisions-for-sloan)): who presses Submit, a domain, forgotten passwords and stored logins, whether data may leave the browser, whether AI may suggest wording, hosting a small model. Decision 5 is made in part: applications are kept on a person's own computer ([0020](decisions/0020-applications-are-kept-by-the-server-on-its-own-computer.md)). Open from it: records in an account on a hosted copy, and resume text to the Claude API. | Step 2 needs 2 and 6. Step 4 needs 3 and the rest of 5. Step A needs 5, 6 and 7. Step 0 was built on the recommended answer to 4. | The default written next to each one in the plan |
 | 3 | **Delete the old Indeed route?** `server/src/indeed.ts` loads Indeed in a browser that hides that it is automated. | It goes against rule 2 ([0007](decisions/0007-no-bot-check-bypass.md)). It is off unless `ENABLE_PLAYWRIGHT` is set, and nothing tests it. | Delete it, and the "Direct site access" wording for Indeed with it. Indeed listings still arrive through Google for Jobs. |
 | 4 | **Try accounts on Sloan's computer:** `git pull`, both installs, then `npm run admin -- setup you@example.com` | The account tests pass on Windows in CI, but nobody has used sign-in on a real Windows machine yet. | |
 | 5 | **Record real answers from the job sites** on Sloan's computer: `npm run fixtures:record`, read the diff, commit | Every recording the tests replay was typed by hand ([testing.md](testing.md#recorded-answers-from-job-sources)). Real ones would catch a site that changed. | The Google for Jobs key is in, so this can be done now. It uses 2 of the month's requests. USAJOBS is skipped until it has a key, and can be recorded then. |
 | 6 | **Run the browser tests on Sloan's computer** with Edge: `$env:BROWSER_CHANNEL='msedge'; npm run test:e2e` | They pass in CI on Windows with Playwright's Chromium. Edge is already on a Windows machine and needs no download. | |
+| 7 | **Say so if another device at home should reach the app.** The server now answers Sloan's computer only. Sloan was asked on 2026-11-24 whether it should, and had not answered when the tracker needed it ([0022](decisions/0022-the-server-answers-its-own-computer-unless-told-otherwise.md)). | Before, any device on the same network could run searches, which spend the month's requests. Opening the server again takes one setting, `HOST=0.0.0.0`, and a server that is open keeps no applications. | Leave it closed. |
 
 ## Known gaps
 
@@ -95,6 +105,15 @@ asking, with a test first. Take one out of this list in the commit that fixes it
   address, `TRUST_PROXY` for the host is not worked out, and a reset link must delete stored logins once the vault
   holds any.
 
+**Applications**
+
+- See [applications.md](applications.md#known-limits). The ones that matter most: the folder is not encrypted,
+  any program on the computer can reach the tracker, and a hosted copy has none.
+- The folder is read whole for every request. That is what makes a file corrected by hand count at once, and it
+  is quick for the few dozen applications of one job hunt. It was not measured with hundreds.
+- The page shows who wrote an answer as it is now. The versions before a change are kept in the folder, and no
+  page shows them.
+
 **Tests**
 
 - All thirteen recordings of job sources are hand-typed (row 5 above).
@@ -117,6 +136,9 @@ asking, with a test first. Take one out of this list in the commit that fixes it
 
 Built and tested with stand-ins, never yet run for real:
 
+- The tracker on Sloan's computer. It ran on a Linux machine in the cloud with real applications imported, and
+  its tests pass on Windows in CI. Not tried yet: the app on Windows with those applications in it, and a restart
+  of the computer in between.
 - Sign-in on Windows by a person (row 4 above).
 - The breached-password lookup against the real service. To check: try to create an account with
   `password1234567`. It should be refused.

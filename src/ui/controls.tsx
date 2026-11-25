@@ -122,13 +122,16 @@ export function Section(props: {
   tone?: 'warn' | 'bad';
   open: boolean;
   onToggle: () => void;
+  /** The level of its heading, where the page around it is not the settings panel. Left out: 3. */
+  level?: 2 | 3;
   children: ReactNode;
 }) {
   const { title, badge, summary, tone, open, onToggle, children } = props;
   const id = useId();
+  const Heading = props.level === 2 ? 'h2' : 'h3';
   return (
     <section className="panel">
-      <h3>
+      <Heading>
         <button type="button" className="panel-head" aria-expanded={open} aria-controls={open ? id : undefined} onClick={onToggle}>
           <span className="panel-title">
             {title} {badge && <span className="badge">{badge}</span>}
@@ -136,7 +139,7 @@ export function Section(props: {
           <span className={`panel-summary${tone ? ` ${tone}` : ''}`}>{summary}</span>
           <Chevron />
         </button>
-      </h3>
+      </Heading>
       {open && (
         <div className="panel-body" id={id}>
           {children}

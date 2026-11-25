@@ -65,6 +65,7 @@ export default mergeConfig(
           // Only wiring: the page's entry point, and files that hold types and no code.
           'src/main.tsx',
           'src/jobs/types.ts',
+          'src/apply/api.ts',
           // Tested, but as separate processes, where this report cannot see them (test/integration/server-start.test.ts
           // and admin-cli.test.ts). Counting them as 0% would say the opposite of the truth.
           'server/src/index.ts',
@@ -89,11 +90,14 @@ export default mergeConfig(
           functions: 92,
           lines: 94,
           // Where a mistake costs the most, every line and function is run by a test: passwords, sessions and
-          // keys, the barrier between a job site's HTML and the page, and the rule that a resume field is the
-          // file's exact words.
+          // keys, the barrier between a job site's HTML and the page, the rule that a resume field is the
+          // file's exact words, and the rules of a tracked application: who wrote an answer, who may change it, and
+          // who is answered at all.
           'server/src/accounts/{crypto,keys,service,http,limits}.ts': { lines: 100, functions: 100 },
           'src/ui/sanitize.ts': { lines: 100, functions: 100 },
           'src/resume/model.ts': { lines: 100, functions: 100 },
+          'src/apply/model.ts': { lines: 100, functions: 100 },
+          'server/src/applications/http.ts': { lines: 100, functions: 100 },
         },
       },
     },

@@ -1,5 +1,9 @@
 import { Fragment, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { APP_NAME } from '../App';
+import { trackerApi, trackerErrorText } from '../apply/client';
+import { STAGE_LABEL } from '../apply/model';
+import { applicationFor, trackedAs } from '../apply/posting';
+import { useTracker } from '../apply/TrackerProvider';
 import { DEFAULT_SETTINGS, fetchJobDetail, searchJobs, type ClientSettings } from '../jobs/client';
 import type { JobPosting, JobQuery, SearchResponse, SourceStatus, Workplace } from '../jobs/types';
 import type { ParsedResume } from '../resume/model';
@@ -362,6 +366,7 @@ function JobDetail({ job, resume, apiUrl, onClose }: { job: JobPosting; resume: 
         {salaryLabel(job) && <span>{salaryLabel(job)}</span>}
         {job.postedAt && <span>Posted {ago(job.postedAt)}</span>}
       </div>
+      <SaveJob job={{ ...job, ...extra }} />
       {resume && skills.length > 0 && (
         <p className="small">
           {matched.length ? (
@@ -389,6 +394,56 @@ function JobDetail({ job, resume, apiUrl, onClose }: { job: JobPosting; resume: 
         ))}
       </div>
     </article>
+  );
+}
+
+/**
+ * Saves the job to the applications this computer keeps, or says that it is there already. Shown only where the
+ * app's own server keeps applications (docs/applications.md).
+ */
+function SaveJob({ job }: { job: JobPosting }) {
+  const { state, refresh } = useTracker();
+  const [saved, setSaved] = useState<{ id: string; existed: boolean }>();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  if (state.status !== 'on') return null;
+  const application = applicationFor(job);
+  if (!application) return null;
+  const tracked = trackedAs(job, state.applications);
+  const id = saved?.id ?? tracked?.id;
+
+  const save = async () => {
+    setBusy(true);
+    setError('');
+    try {
+      const reply = await trackerApi.add(application);
+      setSaved({ id: reply.application.id, existed: reply.existed });
+      await refresh();
+    } catch (e) {
+      setError(trackerErrorText(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="save-job">
+      {id ? (
+        <p className="small" role="status">
+          {saved && !saved.existed ? 'Saved. ' : ''}
+          <a href={`#/applications/${id}`}>{saved && !saved.existed ? 'Open it in your applications' : `In your applications${tracked ? `: ${STAGE_LABEL[tracked.stage]}` : ''}`}</a>
+        </p>
+      ) : (
+        <button type="button" className="btn small" disabled={busy} onClick={() => void save()}>
+          {busy ? 'Saving…' : 'Save to applications'}
+        </button>
+      )}
+      {error && (
+        <div className="notice bad" role="alert">
+          {error}
+        </div>
+      )}
+    </div>
   );
 }
 

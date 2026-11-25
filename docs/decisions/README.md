@@ -29,6 +29,9 @@ Questions that are still open are not here. They are in [status.md](../status.md
 | [0017](0017-how-the-documentation-is-organized.md) | How the documentation is organized | 2026-11-17 | Claude |
 | [0018](0018-search-options-are-fields-and-lists-not-pills.md) | Search options are fields and lists, not pills | 2026-11-24 | Sloan and Claude |
 | [0019](0019-jsearch-is-read-from-its-maker-first.md) | JSearch is read from its maker first | 2026-11-24 | Sloan and Claude |
+| [0020](0020-applications-are-kept-by-the-server-on-its-own-computer.md) | Applications are kept by the server, on its own computer | 2026-11-24 | Sloan and Claude |
+| [0021](0021-an-answer-is-marked-with-who-wrote-it.md) | An answer is marked with who wrote it | 2026-11-24 | Sloan and Claude |
+| [0022](0022-the-server-answers-its-own-computer-unless-told-otherwise.md) | The server answers its own computer, unless told otherwise | 2026-11-24 | Claude |
 
 Dates are UTC. Every record so far has the status Accepted.
 

@@ -67,7 +67,7 @@ body {
   color: var(--text);
   font: 15px/1.5 ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 }
-button, input, select { font: inherit; color: inherit; }
+button, input, select, textarea { font: inherit; color: inherit; }
 a { color: var(--accent); }
 h1, h2, h3 { line-height: 1.2; margin: 0; }
 .muted { color: var(--muted); }
@@ -85,10 +85,19 @@ h1, h2, h3 { line-height: 1.2; margin: 0; }
   padding: 6px 12px; border-radius: 999px; text-decoration: none; color: var(--muted); white-space: nowrap;
 }
 .topnav nav a[aria-current='page'] { background: var(--surface); color: var(--text); box-shadow: var(--shadow); }
+/* The link to the applications makes the menu one link longer. In a narrow window that leaves no room for the name
+   next to the links, so the name goes: "Find jobs" leads where the name leads. With an account link as well, that
+   happens in a wider window already. */
+@media (max-width: 500px) {
+  .topnav:has(nav a[href='#/applications']):has(nav a:nth-child(4)) .brand { display: none; }
+}
 @media (max-width: 420px) {
   .topnav { padding: 12px; gap: 8px; }
   .topnav nav { gap: 0; }
   .topnav nav a { padding: 6px 8px; }
+  .topnav:has(nav a[href='#/applications']) .brand { display: none; }
+  /* Four links in a window narrower than they are scroll sideways, so that the page does not. */
+  .topnav:has(nav a:nth-child(4)) nav { min-width: 0; overflow-x: auto; scrollbar-width: none; }
 }
 @media (max-width: 340px) {
   .topnav nav a { padding: 6px; font-size: 14px; }
@@ -104,6 +113,10 @@ h1, h2, h3 { line-height: 1.2; margin: 0; }
 .btn.primary:hover { filter: brightness(1.08); }
 .btn.ghost { border-color: transparent; background: transparent; }
 .btn.small { padding: 3px 8px; font-size: 13px; }
+/* A link, or the label of a file picker, that looks like the buttons next to it. */
+a.btn { text-decoration: none; color: var(--text); }
+a.btn.primary { color: #fff; }
+label.btn:focus-within { outline: 2px solid var(--accent); outline-offset: 1px; }
 .icon-btn {
   width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--border);
   background: var(--surface); cursor: pointer; display: grid; place-items: center; flex: none;
@@ -249,7 +262,7 @@ button.sources-line:hover > span:first-of-type { color: var(--text); }
 /* A section that folds away under its heading. The heading says what is chosen inside. */
 .panel { border-top: 1px solid var(--border); }
 .panel:last-child { border-bottom: 1px solid var(--border); }
-.panel h3 { font-size: 15px; }
+.panel :is(h2, h3) { font-size: 15px; }
 .panel-head {
   width: 100%; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 12px; align-items: center;
   padding: 14px 2px; border: 0; border-radius: 8px; background: none; text-align: left; cursor: pointer;
@@ -344,6 +357,82 @@ button.sources-line:hover > span:first-of-type { color: var(--text); }
 .btn.danger { color: var(--bad); border-color: var(--bad); }
 .btn.danger:hover { background: var(--bad-soft); }
 .notice a { color: inherit; }
+
+/* ----------------------------------------------------------- applications */
+.tracker-page { width: min(920px, calc(100% - 32px)); margin: 3vh auto 0; padding-bottom: 48px; display: flex; flex-direction: column; gap: 16px; }
+.tracker-page h1 { font-size: 26px; letter-spacing: -0.01em; overflow-wrap: anywhere; }
+.tracker-page p { margin: 0; }
+.tracker-page code { font: 13px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background: var(--surface-2); border-radius: 4px; padding: 1px 4px; }
+.tracker-page .btn { white-space: nowrap; flex: none; }
+.tracker-page .notice ul { margin: 6px 0 0; padding-left: 18px; }
+.tracker-page .empty { background: var(--surface); border: 1px dashed var(--border); border-radius: var(--radius); }
+.tracker-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 12px 20px; }
+.tracker-head p { margin-top: 4px; }
+.tracker-page .facts { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 8px; color: var(--muted); font-size: 14px; }
+.tracker-page .facts strong { color: var(--text); }
+/* The list: one table for each of in progress, sent and closed. */
+.tracker-table { width: 100%; border-collapse: collapse; }
+.tracker-table th, .tracker-table td { padding: 10px 14px 10px 0; text-align: left; vertical-align: top; font-weight: 400; }
+.tracker-table :is(th, td):last-child { padding-right: 0; }
+.tracker-table thead th { padding-top: 0; padding-bottom: 6px; font-size: 12px; font-weight: 500; color: var(--muted); border-bottom: 1px solid var(--border); }
+.tracker-table tbody tr + tr > * { border-top: 1px solid var(--border); }
+.tracker-table tbody th { width: 44%; overflow-wrap: anywhere; }
+.tracker-table tbody th a { font-weight: 600; text-decoration: none; }
+.tracker-table tbody th a:hover { text-decoration: underline; }
+.tracker-table td.wide-only { white-space: nowrap; }
+@media (min-width: 641px) {
+  /* The stage is a few words. On one line, the rows of the table are easier to run an eye down. What is left for
+     the user is a few parts, and a line ends between two of them, not inside one. */
+  .tracker-table td:nth-child(2), .tracker-table .part { white-space: nowrap; }
+}
+@media (max-width: 640px) {
+  /* A narrow window has no room for columns, so each application is a few lines under each other, and each line
+     says what it is. The head of the table is still there for whoever has the page read out to them. */
+  .tracker-table .wide-only { display: none; }
+  .tracker-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .tracker-table, .tracker-table tbody, .tracker-table tbody :is(tr, th, td) { display: block; }
+  .tracker-table tbody :is(th, td) { width: auto; padding: 0; }
+  .tracker-table tbody tr { display: flex; flex-direction: column; gap: 3px; padding: 12px 0; }
+  .tracker-table tbody tr:first-child { padding-top: 4px; }
+  .tracker-table tbody tr:last-child { padding-bottom: 0; }
+  .tracker-table tbody tr + tr { border-top: 1px solid var(--border); }
+  .tracker-table tbody tr + tr > * { border-top: 0; }
+  .tracker-table tbody td[data-label]::before { content: attr(data-label) ': '; color: var(--muted); }
+}
+/* One application. */
+.stage-row { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px 18px; }
+.stage-row .filter { width: min(280px, 100%); }
+.stage-row p { padding-bottom: 8px; }
+.left-group { display: flex; flex-direction: column; gap: 10px; padding-top: 14px; border-top: 1px solid var(--border); }
+.left-group h3 { font-size: 14px; }
+.left-group .answer + .answer { margin-top: 10px; }
+.answer { display: flex; flex-direction: column; gap: 6px; }
+.answer-question { font-weight: 600; overflow-wrap: anywhere; }
+.answer :is(textarea, input[type='text']), .tracker-page .form textarea {
+  width: 100%; min-width: 0; border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; background: var(--surface-2); line-height: 1.5;
+}
+/* A box grows with what is typed in it, where the browser can do that. Elsewhere its rows are counted from the text. */
+.tracker-page textarea { resize: vertical; field-sizing: content; min-height: 4.4em; max-height: 70vh; }
+.tracker-page :is(textarea, input[type='text']):focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+/* Text as it was typed: its line ends are kept. */
+.answer-value { white-space: pre-wrap; overflow-wrap: anywhere; }
+.answer-meta { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.answers, .history { list-style: none; margin: 0; padding: 0; }
+.answers > li { display: flex; flex-direction: column; gap: 4px; padding: 12px 0; }
+.answers > li + li, .history li { border-top: 1px solid var(--border); }
+.history li { padding: 10px 0; }
+.history li:last-child { padding-bottom: 0; }
+.yours-list { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; overflow-wrap: anywhere; }
+/* The parts that fold away, in one card. */
+.panels { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 0 20px; }
+.panels .panel:first-child { border-top: 0; }
+.panels .panel:last-child { border-bottom: 0; }
+.panels .panel-body > p { margin-bottom: 4px; }
+.tracker-page .desc { line-height: 1.6; overflow-wrap: anywhere; }
+.tracker-page .listed { border-top: 1px solid var(--border); margin-top: 18px; padding-top: 12px; font-size: 13px; }
+/* On a search result: the button that saves the job, or the link to where it was saved. */
+.save-job { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; margin: 0 0 14px; }
+.save-job p { margin: 0; }
 
 /* ----------------------------------------------------------------- resume */
 .dropzone {

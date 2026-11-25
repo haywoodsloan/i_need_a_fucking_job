@@ -97,6 +97,19 @@ describe('serving the built app', () => {
     expect(answered).not.toContain('job-hunt-accounts');
   });
 
+  it('tells the page that this server keeps applications only when it does', () => {
+    const page = (app: ReturnType<typeof loadApp>) => {
+      let sent = '';
+      const res = { writeHead: () => res, end: (body?: Buffer) => void (sent = String(body)) };
+      app.handle({ method: 'GET', headers: {} } as never, res as never, '/');
+      return sent;
+    };
+    expect(page(loadApp(dir, { applications: true }))).toContain('<title>App</title>\n    <meta name="job-hunt-server" content="on" />\n    <meta name="job-hunt-applications" content="on" />\n  </head>');
+    expect(page(loadApp(dir, { accounts: true, applications: true }))).toContain('<meta name="job-hunt-accounts" content="on" />\n    <meta name="job-hunt-applications" content="on" />\n  </head>');
+    expect(page(loadApp(dir, { accounts: true }))).not.toContain('job-hunt-applications');
+    expect(page(loadApp(dir))).not.toContain('job-hunt-applications');
+  });
+
   it('lets the browser keep hashed files and recheck the page', async () => {
     const js = await raw('/assets/index-abc123.js');
     expect(js.headers['content-type']).toBe('text/javascript; charset=utf-8');

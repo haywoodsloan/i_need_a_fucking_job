@@ -20,7 +20,8 @@ Starting a task? Read [AGENTS.md](../AGENTS.md), then [status.md](status.md), th
 | [fetch-tiers.md](fetch-tiers.md) | Reference | How the server reaches job sources, what it does at a bot check, how to write a tier | The pipeline or the contract of a tier changes |
 | [resume-model.md](resume-model.md) | Reference | The resume fields and their guarantee, how a resume is parsed, its limits | The model or the parser changes |
 | [accounts.md](accounts.md) | Reference | Sign-in as built: commands, what is stored, keys, sessions, routes, settings, limits | Anything about accounts changes |
-| [applications-plan.md](applications-plan.md) | Plan | What is intended: the tracker, the login vault, applying, Claude, hosting, the threat model, the build order, the open decisions | A step is built (mark it there), or the plan changes |
+| [applications.md](applications.md) | Reference | The tracker as built: where it is on, where the applications are kept, what one holds, who may change what, the routes, how an assistant works on them, what to do after a restart | Anything about the tracker changes |
+| [applications-plan.md](applications-plan.md) | Plan | What is intended: the tracker for a hosted copy, the login vault, applying, Claude, hosting, the threat model, the build order, the open decisions | A step is built (mark it there), or the plan changes |
 
 The settings of the server are explained in `server/.env.example`, next to the settings themselves.
 
@@ -49,6 +50,9 @@ status.
   log, where it has a date.
 - **Sloan's own words** are quoted where they made a decision. They are the requirement. A summary of them is
   not.
+- **Nothing about the job hunt itself.** The repository is public. Where Sloan applies, what a form asked and
+  what was answered stay out of the docs, the tests and the commit messages. They are in the applications folder
+  on Sloan's computer ([applications.md](applications.md#where-the-applications-are-kept)).
 - **If a doc and the code disagree,** find out which one is wrong before you build on either. For how something
   works, the code is right and the doc gets fixed. For a rule (the decisions, the rules in `AGENTS.md`), the doc is
   right and the code has a bug.

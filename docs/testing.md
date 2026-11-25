@@ -37,7 +37,7 @@ One runner, [Vitest](https://vitest.dev), runs four layers. `vitest.config.ts` d
 
 | Layer | Files | Runs in | What it is for | What is fake |
 | --- | --- | --- | --- | --- |
-| **Unit** | `src/**/*.test.ts`, `test/server/`, `test/sources/` | Node | Logic: parsers, adapters, merging, the fetch pipeline, accounts, the sanitizer | The network and the clock |
+| **Unit** | `src/**/*.test.ts`, `test/server/`, `test/sources/` | Node | Logic: parsers, adapters, merging, the fetch pipeline, accounts, the sanitizer, the rules and routes of the tracker | The network and the clock |
 | **Component** | `src/**/*.test.tsx` | A simulated browser (jsdom) | A page as a person uses it: what it shows, what a click or a key does | The server, at `fetch` |
 | **Integration** | `test/integration/` | Node, with real sockets, files and processes on this machine | The parts put together: the server over HTTP, the admin command and the server as real processes, real PDF and Word files | The job sites only |
 | **Browser** | `test/e2e/*.e2e.ts` | Chromium | The built app under its real security headers. A handful of journeys. | The job sites only |
@@ -81,6 +81,9 @@ in `test/fixtures/`.
   helps the next reader.
 - **Made-up people only.** Sam Okafor, Jordan Rivera, `someone@example.com`. Never real personal data, in a test
   or a fixture.
+- **Made-up applications too.** An application in a test is for Globex or Initech, and its posting number was
+  made up. Never an employer someone really applies to, a real posting, or a real answer: the repository is
+  public, and so is its history.
 - **It has to pass on Windows.** Build paths with `node:path` and `fileURLToPath`. Even out `\r\n` when reading
   what a process printed. Delete temporary folders with retries (`rmSync(dir, { recursive: true, force: true,
   maxRetries: 5, retryDelay: 200 })`).
@@ -158,7 +161,8 @@ one place the app reaches it: `fetch`.
 | `refusal(status, code, error)` | A reply that turns a request down, shaped like the real server's. |
 | `held()` | A reply that waits until the test lets it go, for testing what a page shows while it waits. |
 | `fakeAccounts(options)` | The account routes with state behind them: sign in, sessions, invites, password change. Same paths, reply shapes and sentences as the real server. |
-| `openApp(address, options, routes)` | Renders the whole app at an address like `'#/account'`, with `fakeAccounts` behind it. Returns the `user` to click and type with. |
+| `fakeTracker(applications)` | The tracker's routes, for `openApp`. It is not a second set of rules: it runs the server's own routes (`server/src/applications/http.ts`) over records in memory, so the page is answered as the real server answers. `tracker.add` and `tracker.change` do what an assistant does behind the page's back, and `tracker.get` reads a record as it is kept. |
+| `openApp(address, options, routes)` | Renders the whole app at an address like `'#/account'`, with `fakeAccounts` behind it. Returns the `user` to click and type with. The server it stands for keeps no applications, unless `routes` are a `fakeTracker`'s. |
 
 Find things the way a person does, by role and name:
 `screen.getByRole('button', { name: 'Sign in' })`. Use `await screen.findBy…` for what appears after a reply.
@@ -184,6 +188,21 @@ jsdom does not lay a page out or draw. What depends on that is tested [in a real
   leaves none to the file. **`AUTH_PEPPER` is always passed**: without one, `setup` would write a new secret into
   `server/.env`. The admin test ends by checking that the file was left alone. Helpers are in
   `test/helpers/process.ts`.
+- **The tracker** ([applications.md](applications.md)), from the inside out:
+  - `src/apply/model.test.ts`: the rules of a record, with a test for each line of "who may change what".
+  - `test/server/applications.test.ts`: every route, and who is answered, without a socket and over records in
+    memory.
+  - `test/server/applications-store.test.ts`: the folder, with real files in a temporary one. A failing disk and
+    a file that Windows holds for a moment are stood in for by the step that puts a file in place.
+  - `test/server/listen.test.ts`: which addresses the server answers on, on real sockets, and whether a server
+    keeps applications at all.
+  - `test/integration/applications-server.test.ts`: the tracker inside the whole server, over HTTP.
+  - `test/integration/applications-restart.test.ts`: a real server process is ended on the spot and another is
+    started on the same folder. It also asks the server at the address other computers use for this machine,
+    and fails if anything answers there.
+- **No test touches the real applications.** `startServerProcess` in `test/helpers/process.ts` starts a server that
+  answers this machine only and keeps no applications, unless the test gives it a folder of its own. The folder
+  in `server/.data/` on the machine that runs the tests is never read or written.
 
 ## Real resume files
 
@@ -226,6 +245,9 @@ cut off from every address but the app's. It covers what nothing else can:
 3. An invite link becomes a signed-in account that survives a reload, signs out, and signs in again.
 4. A PDF resume is read by the real PDF reader, its page is drawn, and the review survives a reload.
 5. A Word resume is read by the real Word reader.
+6. An application is added on the page, an assistant's drafts arrive through the server while the page is open,
+   the user keeps one and rewrites another, and the file on the disk says who wrote what. It is still there after
+   a reload, and "Export" downloads it.
 
 Every test ends by checking `problems`: anything the page logged as an error or the policy refused. So a library
 that starts to need something the policy forbids fails here.
@@ -253,8 +275,9 @@ The run builds its own copy of the app into a temporary folder (`test/e2e/build.
 - **It is a floor, not a goal.** `vitest.config.ts` holds a minimum a little under what the suite reaches. A
   change that leaves clearly more code untested than before fails the build. Raise the minimum when coverage goes
   up. Do not lower it to get a change through: write the test.
-- **Three places must have every line run by a test:** the account files that handle passwords, sessions and
-  keys, the sanitizer, and the resume model.
+- **Four places must have every line run by a test:** the account files that handle passwords, sessions and
+  keys, the sanitizer, the resume model, and the tracker's rules and routes (`src/apply/model.ts` and
+  `server/src/applications/http.ts`).
 - **A covered line is not a tested line.** Coverage shows what no test runs. It cannot show that a test checks the
   right thing. The property tests and the checks in [Writing a test](#writing-a-test) are for that.
 - **Left out of the count**, each with its reason in `vitest.config.ts`: files that are only wiring or types;
@@ -289,6 +312,10 @@ A green run does not cover these. Each one is a known gap, not an oversight:
   `server/.env` on the machine that runs the server. [status.md](status.md#not-yet-tried-on-a-real-machine) says
   whether each has been tried there.
 - **The breached-password lookup against the real service.** It is tested against a stand-in.
+- **A real form against its record.** The tracker keeps what an assistant says it typed into an employer's form.
+  No test opens such a form, so none can see whether the two agree.
+- **Two servers on one folder of applications.** One server for one folder is the rule
+  ([applications.md](applications.md#where-the-applications-are-kept)), and nothing tests what breaking it does.
 - **Browsers other than Chromium,** and phones.
 - **How the pages look.** There are no picture comparisons. The tests check what is on the page, not where.
 - **Large loads and long runs.** There are no speed or load tests.
