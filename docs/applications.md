@@ -357,7 +357,11 @@ Nothing is lost in between: the applications are files, not something a running 
 1. **Is the app running?** `curl http://localhost:8787/api/health` answers with `"applications": true` when it is.
 2. **If not, start it** in the repository's folder with `npm run local`, in a window of its own, and leave it
    running. It serves the app at `http://localhost:5173` and the server at `http://localhost:8787`. An assistant
-   has to start it in a way that outlives its own session.
+   has to start it in a way that outlives its own session. On Windows that takes three things. Start the window
+   outside the job that holds the session's processes, or it ends with the session. Give it the environment
+   Windows builds for the signed-in user, and not the session's own, which can hold keys. Set the window's title
+   again once the app is up, because npm puts its own title on it. Closing the window stops the app, and loses
+   nothing.
 3. **Read the list:** `GET /api/applications`. Every application is there as it was left, with its stage and what
    is left for the user.
 4. **Put a form back** when its browser tab is gone. Open `form.url`. Follow `form.notes`. Type every answer whose

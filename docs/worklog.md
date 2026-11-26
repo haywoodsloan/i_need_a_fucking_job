@@ -21,6 +21,53 @@ The shape of an entry:
 **Commits:** short hashes, when the entry is written after them.
 ```
 
+## 2026-11-26: The tracker runs on Sloan's computer, and a test that depended on timing is fixed
+
+**Asked for:** nothing new. Sloan was asked with a card, "Put the application tracker on main and set it up on
+your PC?", and chose "Put it on main and on my PC". This is the first run that the entry below left open, and a
+fix for a test that came with that entry.
+
+**Changed:**
+
+- **The tracker runs on Sloan's computer.** A session updated the app there and started it. It sent the
+  applications that were prepared before the tracker existed to `POST /api/applications/import` as one file. A
+  script then compared what the tracker held with that file, question by question. Everything was the same, and
+  nothing was marked as Sloan's words. The app was stopped and started again, and the tracker held the same
+  applications, unchanged. At the computer's other addresses nothing answered on the server's port.
+  [status.md](status.md#not-yet-tried-on-a-real-machine) says what is still untried.
+- **The app listens for its window coming back from the moment the list of applications is on the page**
+  (`src/apply/TrackerProvider.tsx`). The first point under "Found on the way" says why.
+- **[applications.md](applications.md#after-a-restart) says what it takes on Windows** to start the app so that
+  it keeps running when the assistant's session that started it has ended. [testing.md](testing.md#pages) says
+  where a page starts to listen for something it must not miss.
+
+**Found on the way:**
+
+- **The first run of the checks on `main` failed,** on Linux, in one test of 1,231. The same commit had passed on
+  its branch. The test changes what the server holds right after the list of applications appears, sends the
+  window the focus, and waits for the page to show the change. The app started to listen for the focus in an
+  effect, which React runs a moment after it has changed the page, and this once the test was quicker. For a
+  person that gap is a few milliseconds, and the page looks at the server again a quarter of a minute later
+  anyway. The listening now starts in a layout effect, in the same step that puts the list on the page. A new
+  test sends the focus in exactly that moment, and fails without the change. The demo was not deployed from the
+  run that failed. It is deployed from the commit with this entry.
+- **On Windows, what an assistant's session starts ends with the session.** A window that is started outside the
+  session's job stays. Started the plain way, it would still get the session's environment, with whatever keys
+  that holds, so the app's window gets the environment Windows builds for the signed-in user.
+- **npm puts its own title on a console window.** The app's window is found by its title, so the title is set
+  again once the app is up.
+- **The app was not running on Sloan's computer** when the session got there, although the computer had not been
+  restarted: its window had been closed. Nothing was lost by that, and nothing would be now. The applications
+  are files, and whoever needs the app starts it.
+
+**Left open:**
+
+- A restart of the computer itself, and putting a form back from its record afterwards. So far only the app was
+  stopped and started ([status.md](status.md#not-yet-tried-on-a-real-machine)).
+- What the entry below left open, except its first point.
+
+**Commits:** `62198c5` for the test and the listening, and the commit with this entry.
+
 ## 2026-11-25: Applications are kept on the computer, and survive a restart
 
 **Asked for:** Sloan: "I'd like to be able to have you find the jobs prepare the applications and even if I

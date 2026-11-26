@@ -1,6 +1,6 @@
 # Status
 
-**Last updated: 2026-11-25.**
+**Last updated: 2026-11-26.**
 
 Where the project stands: what works, what comes next, what only Sloan can settle, and what is known to be wrong or
 unchecked. This file is rewritten whenever one of those changes, so it is always about today. What happened and
@@ -40,12 +40,13 @@ Contents: [Built](#built) · [Not built](#not-built) · [Next](#next) · [Waitin
 
 From the plan's [build order](applications-plan.md#15-build-order):
 
-1. **The tracker on Sloan's computer.** It is built and has not run there yet. A session updates the app there,
-   brings in the applications that were prepared before the tracker existed, and tries a restart
-   ([applications.md](applications.md#after-a-restart)).
-2. **Step 2: the vault and assisted apply,** Greenhouse first. Needs decision 2 below, and decision 6 for the
+1. **Step 2: the vault and assisted apply,** Greenhouse first. Needs decision 2 below, and decision 6 for the
    first drafts an assistant wrote: whether the app may send them, and how they are labelled.
-3. **Step A, in parallel:** Claude for resume breakdown and review. Needs decisions 5, 6 and 7, and an API key.
+2. **Step A, in parallel:** Claude for resume breakdown and review. Needs decisions 5, 6 and 7, and an API key.
+
+Step 1 runs on Sloan's computer since 2026-11-26, with the applications that were prepared before the tracker
+existed in it. The first restart of that computer is the next thing to watch
+([Not yet tried on a real machine](#not-yet-tried-on-a-real-machine)).
 
 Work that needs no decision and can be picked up any time is under [Known gaps](#known-gaps).
 
@@ -136,9 +137,10 @@ asking, with a test first. Take one out of this list in the commit that fixes it
 
 Built and tested with stand-ins, never yet run for real:
 
-- The tracker on Sloan's computer. It ran on a Linux machine in the cloud with real applications imported, and
-  its tests pass on Windows in CI. Not tried yet: the app on Windows with those applications in it, and a restart
-  of the computer in between.
+- A restart of Sloan's computer with applications in the tracker, and putting a form back from its record
+  afterwards ([applications.md](applications.md#after-a-restart)). The tracker runs there since 2026-11-26. It
+  held every application, unchanged, after the app was stopped and started. The computer itself has not been
+  restarted since, and no form has been filled in again from its record.
 - Sign-in on Windows by a person (row 4 above).
 - The breached-password lookup against the real service. To check: try to create an account with
   `password1234567`. It should be refused.

@@ -168,6 +168,12 @@ Find things the way a person does, by role and name:
 `screen.getByRole('button', { name: 'Sign in' })`. Use `await screen.findBy…` for what appears after a reply.
 Reach for a CSS class only when there is nothing a person could name.
 
+A page that must hear something from the moment a part of it appears, such as the window getting the focus back,
+starts to listen in a layout effect. A plain effect starts a moment after the page has changed, and a test that
+acts as soon as it sees the change is quicker than that now and then. The test "asks again when the window comes
+back into view, from the moment the list is on the page" in `src/ui/ApplicationsPage.test.tsx` acts in exactly
+that moment.
+
 `src/testing/setup.ts` runs before every component test. It adds the matchers that read like the page
 (`toBeInTheDocument`, `toBeDisabled`), empties the page and the browser storage after each test, and stands in for
 the few things jsdom lacks: `scrollIntoView`, the size of a text range, and reading a file's bytes. Where a test
