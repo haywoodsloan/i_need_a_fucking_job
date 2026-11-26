@@ -4,7 +4,7 @@
  * would have kept.
  */
 import { screen, waitFor, within } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, onTestFinished } from 'vitest';
 import type { Changes } from '../apply/api';
 import { FILE_FORMAT, type Application, type FormField } from '../apply/model';
 import { DEFAULT_BOARDS } from '../jobs/boards';
@@ -119,6 +119,22 @@ describe('where the applications are', () => {
 
     expect(screen.getByRole('link', { name: 'Staff Technical Writer' })).toBeInTheDocument();
     expect(screen.queryByText('The app could not reach its server.')).not.toBeInTheDocument();
+  });
+
+  it('asks again when the window comes back into view, from the moment the list is on the page', async () => {
+    const { server } = open('/applications');
+    // The window gets the focus back in the very moment in which the list is put on the page: after React changed
+    // the page, and before it has run what it leaves for later. A page that starts to listen "later" misses it.
+    const appeared = new MutationObserver(() => {
+      if (!screen.queryByText('Staff Technical Writer')) return;
+      appeared.disconnect();
+      backInView();
+    });
+    appeared.observe(document.body, { childList: true, subtree: true });
+    onTestFinished(() => appeared.disconnect());
+
+    // The app and the page each ask when they open. The third question is the one for the focus.
+    await waitFor(() => expect(server.sent('GET /api/applications')).toHaveLength(3));
   });
 });
 

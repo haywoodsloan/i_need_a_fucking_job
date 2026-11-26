@@ -3,7 +3,7 @@
  * The list always comes from the server (GET /api/applications). Nothing of it is kept in the browser, so the
  * user's browser and an assistant working on the same computer always see the same applications.
  */
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useState, type ReactNode } from 'react';
 import type { UnreadableFile } from './api';
 import { TRACKER_ENABLED, TrackerError, trackerApi } from './client';
 import type { ApplicationSummary } from './model';
@@ -68,7 +68,9 @@ export function TrackerProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // An assistant may have changed the applications while this window was in the background.
-  useEffect(() => {
+  // A layout effect, so that the listening starts in the same step in which the list is put on the page. A plain
+  // effect starts a moment later, and a focus that comes in between is missed until the next look at the server.
+  useLayoutEffect(() => {
     if (!on) return;
     const again = () => void refresh();
     window.addEventListener('focus', again);
